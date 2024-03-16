@@ -5,6 +5,7 @@ import time
 from dotenv import load_dotenv
 from pyairtable import Api, Table, Base
 from celery import Celery
+from celery.contrib import rdb
 
 app = Flask(__name__)
 
@@ -27,6 +28,7 @@ app.config["CELERY_RESULT_BACKEND"] = (
 # Initialize Celery
 celery = Celery(app.name, broker=app.config["CELERY_BROKER_URL"])
 celery.conf.update(app.config)
+
 
 # Custom logger setup
 if not app.debug:
@@ -85,13 +87,11 @@ def send_prompt_to_claude(prompt):
 
 
 def update_response_table(base_id, platform_name, submission_id, response):
-    print("creating table")
     base = Base(api, base_id)
     table = Table(None, base, platform_name)
-    print("Table", table)
     fields = {"Submission": [submission_id], "Post Body": response}
-    created = table.create(fields)
-    print("created: ", created)
+    rdb.set_trace()
+    table.create(fields)
 
 
 @celery.task
@@ -109,8 +109,6 @@ def generate_content_for_platform(platform, base_id, submission_id):
         strategy=strategy_text,
     )
     response = send_prompt_to_claude(prompt)
-
-    print("CLAUDE RESPONSE:", response)
 
     if response:
         update_response_table(base_id, platform, submission_id, response)
