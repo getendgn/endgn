@@ -3,3 +3,4 @@ requests
 python-dotenv
 pyairtable
 celery
+gunicorn==21.2.0
