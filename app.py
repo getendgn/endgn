@@ -16,8 +16,9 @@ AIRTABLE_API_KEY = os.getenv("AIRTABLE_API_KEY")
 AIRTABLE_BASE_ID = os.getenv("AIRTABLE_BASE_ID")
 
 # Celery configuration
-app.config['CELERY_BROKER_URL'] = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379")
-app.config['CELERY_RESULT_BACKEND'] = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379")
+REDIS_URL = os.getenv("REDIS_URL")
+app.config['CELERY_BROKER_URL'] = os.getenv("CELERY_BROKER_URL", REDIS_URL) or "redis://localhost:6379/"
+app.config['CELERY_RESULT_BACKEND'] = os.getenv("CELERY_RESULT_BACKEND", REDIS_URL) or "redis://localhost:6379/"
 
 # Initialize Celery
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
