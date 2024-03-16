@@ -85,10 +85,13 @@ def send_prompt_to_claude(prompt):
 
 
 def update_response_table(base_id, platform_name, submission_id, response):
+    print("creating table")
     base = Base(api, base_id)
     table = Table(None, base, platform_name)
+    print("Table", table)
     fields = {"Submission": [submission_id], "Post Body": response}
-    table.create(fields)
+    created = table.create(fields)
+    print("created: ", created)
 
 
 @celery.task
@@ -106,6 +109,8 @@ def generate_content_for_platform(platform, base_id, submission_id):
         strategy=strategy_text,
     )
     response = send_prompt_to_claude(prompt)
+
+    print("CLAUDE RESPONSE:", response)
 
     if response:
         update_response_table(base_id, platform, submission_id, response)
