@@ -92,7 +92,7 @@ def update_response_table(base_id, platform_name, submission_id, response):
     table.create(fields)
 
 
-# @celery.task
+@celery.task
 def generate_content_for_platform(platform, base_id, submission_id):
     submission_record = get_submission_by_id(base_id, submission_id)
     strategy_text = get_platform_strategy(base_id, platform)
@@ -108,7 +108,6 @@ def generate_content_for_platform(platform, base_id, submission_id):
     }
     prompt = prompt_template.format().format(**prompt_data)
     response = send_prompt_to_claude(prompt)
-    print(response)
 
     if response:
         update_response_table(base_id, platform, submission_id, response)
@@ -140,7 +139,9 @@ def generate_content_route():
         ).split(",")
         for platform in platforms:
             app.logger.info(f"Generating content for platform: {platform}")
-            generate_content_for_platform(platform, AIRTABLE_BASE_ID, submission_id)
+            generate_content_for_platform.delay(
+                platform, AIRTABLE_BASE_ID, submission_id
+            )
 
         app.logger.info("Content generation tasks queued")
         return jsonify({"message": "Content generation tasks queued."})
