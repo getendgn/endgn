@@ -139,7 +139,7 @@ def generate_content_route():
             generate_content_for_platform.apply_async(
                 args=(platform, AIRTABLE_BASE_ID, submission_id)
             )
-            time.sleep(10)
+            time.sleep(5)
 
         app.logger.info("Content generation tasks queued")
         return jsonify({"message": "Content generation tasks queued."})
