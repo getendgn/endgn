@@ -2,14 +2,11 @@ from flask import Flask, request, jsonify
 import os
 import requests
 import time
-from dotenv import load_dotenv
 from pyairtable import Api, Table, Base
 from celery import Celery
 
 app = Flask(__name__)
 
-# Load environment variables
-load_dotenv()
 CLAUDE_MODEL = os.getenv("CLAUDE_MODEL")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 AIRTABLE_API_KEY = os.getenv("AIRTABLE_API_KEY")
@@ -139,8 +136,8 @@ def generate_content_route():
         ).split(",")
         for platform in platforms:
             app.logger.info(f"Generating content for platform: {platform}")
-            generate_content_for_platform.delay(
-                platform, AIRTABLE_BASE_ID, submission_id
+            generate_content_for_platform.apply_async(
+                args=(platform, AIRTABLE_BASE_ID, submission_id)
             )
 
         app.logger.info("Content generation tasks queued")
