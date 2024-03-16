@@ -90,7 +90,6 @@ def update_response_table(base_id, platform_name, submission_id, response):
     base = Base(api, base_id)
     table = Table(None, base, platform_name)
     fields = {"Submission": [submission_id], "Post Body": response}
-    rdb.set_trace()
     table.create(fields)
 
 
@@ -103,11 +102,12 @@ def generate_content_for_platform(platform, base_id, submission_id):
     if not prompt_template or not strategy_text:
         return f"No prompt or strategy found for {platform}"
 
-    prompt = prompt_template.format().format(
-        transcript=submission_record["fields"].get("Transcript", ""),
-        writing_style=submission_record["fields"].get("Writing Style", ""),
-        strategy=strategy_text,
-    )
+    prompt_data = {
+        "Transcript": submission_record["fields"].get("Transcript", ""),
+        "WritingStyle": submission_record["fields"].get("Writing Style", ""),
+        "Strategy": strategy_text,
+    }
+    prompt = prompt_template.format().format(**prompt_data)
     response = send_prompt_to_claude(prompt)
 
     if response:
