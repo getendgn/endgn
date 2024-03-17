@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
 import os
 import requests
-import time
 from pyairtable import Api, Table, Base
 from celery import Celery
 
@@ -82,14 +81,14 @@ def send_prompt_to_claude(prompt, claude_model):
         return None
 
 
-def update_response_table(base_id, platform_name, submission_id, response):
+def update_response_table(base_id, platform_name, submission_id, response, user_id):
     base = Base(api, base_id)
     table = Table(None, base, platform_name)
-    fields = {"Submission": [submission_id], "Post Body": response}
+    fields = {"Submission": [submission_id], "Post Body": response, "User": [user_id]}
     table.create(fields)
 
 
-@celery.task
+@celery.task(rate_limit="1/5s")
 def generate_content_for_platform(platform, base_id, submission_id, claude_model):
     submission_record = get_submission_by_id(base_id, submission_id)
     strategy_text = get_platform_strategy(base_id, platform)
@@ -107,7 +106,8 @@ def generate_content_for_platform(platform, base_id, submission_id, claude_model
     response = send_prompt_to_claude(prompt, claude_model)
 
     if response:
-        update_response_table(base_id, platform, submission_id, response)
+        user_id = submission_record["fields"].get("User", [None])[0]
+        update_response_table(base_id, platform, submission_id, response, user_id)
         return f"Content generated and saved to Airtable for {platform}"
     else:
         return f"Error generating content for {platform}"
@@ -135,12 +135,12 @@ def generate_content_route():
             "PLATFORMS",
             "LinkedIn Articles,Twitter,Facebook,Instagram,YouTube,Pinterest,Blogs",
         ).split(",")
-        for platform in platforms:
+        for i, platform in enumerate(platforms):
             app.logger.info(f"Generating content for platform: {platform}")
             generate_content_for_platform.apply_async(
-                args=(platform, AIRTABLE_BASE_ID, submission_id, claude_model)
+                countdown=i * 5,
+                args=(platform, AIRTABLE_BASE_ID, submission_id, claude_model),
             )
-            time.sleep(5)
 
         app.logger.info("Content generation tasks queued")
         return jsonify({"message": "Content generation tasks queued."})
