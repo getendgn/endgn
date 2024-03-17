@@ -170,6 +170,7 @@ def encrypt_key():
 
     cipher_suite = Fernet(ENCRYPTION_KEY)
     api_key = data.get("Key")
+    print("API_KEY", api_key)
     encrypted_api_key = cipher_suite.encrypt(api_key.encode())
 
     base = Base(api, AIRTABLE_BASE_ID)
