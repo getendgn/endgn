@@ -85,7 +85,8 @@ def update_response_table(base_id, platform_name, submission_id, response, user_
     base = Base(api, base_id)
     table = Table(None, base, platform_name)
     fields = {"Submission": [submission_id], "Post Body": response}
-    print(user_id)
+
+    # Add user ID if available
     if user_id:
         fields["User"] = [user_id]
     table.create(fields)
@@ -129,9 +130,9 @@ def generate_content_route():
         submission_id = submission_data.get("submissionId")
         app.logger.info(f"Submission ID: {submission_id}")
 
-        # from submission table read claude_model from airtable
         submission_record = get_submission_by_id(AIRTABLE_BASE_ID, submission_id)
         claude_model = submission_record["fields"].get("Anthropic Model", CLAUDE_MODEL)
+        print(claude_model)
 
         if not submission_id:
             app.logger.error("Invalid submission ID")
