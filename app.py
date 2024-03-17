@@ -169,7 +169,7 @@ def encrypt_key():
     data = request.get_json()
 
     cipher_suite = Fernet(ENCRYPTION_KEY)
-    api_key = data.get("Key")
+    api_key = data.get("apiKey")
     print("API_KEY", api_key)
     encrypted_api_key = cipher_suite.encrypt(api_key.encode())
 
