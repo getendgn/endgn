@@ -88,7 +88,7 @@ def update_response_table(base_id, platform_name, submission_id, response, user_
     table.create(fields)
 
 
-@celery.task(rate_limit="1/5s")
+@celery.task
 def generate_content_for_platform(platform, base_id, submission_id, claude_model):
     submission_record = get_submission_by_id(base_id, submission_id)
     strategy_text = get_platform_strategy(base_id, platform)
