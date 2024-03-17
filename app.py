@@ -109,9 +109,6 @@ def generate_content_for_platform(platform, base_id, submission_id, claude_model
         "Strategy": strategy_text,
     }
     prompt = prompt_template.format().format(**prompt_data)
-    
-    submission_record.get()
-    
     response = send_prompt_to_claude(prompt, claude_model)
 
     if response:
@@ -126,7 +123,6 @@ def generate_content_for_platform(platform, base_id, submission_id, claude_model
 def generate_content_route():
     app.logger.info("Received generate-content request")
     data = request.get_json()
-    print('DATA', data)
     app.logger.info(f"Request data: {data}")
 
     submission_data = data.get("submission_id")
