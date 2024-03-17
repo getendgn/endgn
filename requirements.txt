@@ -4,3 +4,4 @@ pyairtable
 celery
 Redis
 gunicorn==21.2.0
+cryptography
