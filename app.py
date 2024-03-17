@@ -3,6 +3,7 @@ import os
 import requests
 from pyairtable import Api, Table, Base
 from celery import Celery
+from cryptography.fernet import Fernet
 
 app = Flask(__name__)
 
@@ -10,6 +11,7 @@ CLAUDE_MODEL = os.getenv("CLAUDE_MODEL")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 AIRTABLE_API_KEY = os.getenv("AIRTABLE_API_KEY")
 AIRTABLE_BASE_ID = os.getenv("AIRTABLE_BASE_ID")
+ENCRYPTION_KEY = os.getenv("ENCRYPTION_KEY")
 
 # Celery configuration
 REDIS_URL = os.getenv("REDIS_URL")
@@ -92,7 +94,7 @@ def update_response_table(base_id, platform_name, submission_id, response, user_
     table.create(fields)
 
 
-@celery.task
+@celery.task(rate_limit="7/m")
 def generate_content_for_platform(platform, base_id, submission_id, claude_model):
     submission_record = get_submission_by_id(base_id, submission_id)
     strategy_text = get_platform_strategy(base_id, platform)
@@ -132,7 +134,6 @@ def generate_content_route():
 
         submission_record = get_submission_by_id(AIRTABLE_BASE_ID, submission_id)
         claude_model = submission_record["fields"].get("Anthropic Model", CLAUDE_MODEL)
-        print(claude_model)
 
         if not submission_id:
             app.logger.error("Invalid submission ID")
@@ -145,7 +146,7 @@ def generate_content_route():
         for i, platform in enumerate(platforms):
             app.logger.info(f"Generating content for platform: {platform}")
             generate_content_for_platform.apply_async(
-                countdown=i * 5,
+                countdown=i * 10,
                 args=(platform, AIRTABLE_BASE_ID, submission_id, claude_model),
             )
 
@@ -161,6 +162,30 @@ def get_latest_submission(base_id):
     table = Table(None, base, "Submissions")
     records = table.all(sort=["-Created Time"])
     return records[0] if records else None
+
+
+@app.route("/encrypt_key", methods=["POST"])
+def encrypt_key():
+    data = request.get_json()
+
+    cipher_suite = Fernet(ENCRYPTION_KEY)
+    api_key = data.get("api_key")
+    encrypted_api_key = cipher_suite.encrypt(api_key.encode())
+
+    base = Base(api, AIRTABLE_BASE_ID)
+    table = Table(None, base, "Keys")
+
+    # Update the key in Airtable
+    records = table.all(formula=f"{{Key}} = '{api_key}'")[0]
+    records["fields"]["Key"] = encrypted_api_key.decode()
+    table.update(records["id"], records["fields"])
+
+    return jsonify({"message": "Key encrypted successfully."})
+
+
+def decrypt_key(encrypted_key):
+    cipher_suite = Fernet(ENCRYPTION_KEY)
+    return cipher_suite.decrypt(encrypted_key.encode()).decode()
 
 
 if __name__ == "__main__":
