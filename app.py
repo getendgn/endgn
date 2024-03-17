@@ -177,7 +177,8 @@ def encrypt_key():
 
     # Update the key in Airtable
     record = table.first(formula=f"{{Key}} = '{api_key}'")
-    table.update(record.get("id"), {"Key": encrypted_api_key.decode()})
+    if record:
+        table.update(record.get("id"), {"Key": encrypted_api_key.decode()})
 
     return jsonify({"message": "Key encrypted successfully."})
 
