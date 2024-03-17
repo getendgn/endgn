@@ -58,14 +58,14 @@ def get_platform_prompt(base_id, platform_name):
     return records[0]["fields"].get("Prompt") if records else None
 
 
-def send_prompt_to_claude(prompt):
+def send_prompt_to_claude(prompt, claude_model):
     headers = {
         "Content-Type": "application/json",
         "x-api-key": ANTHROPIC_API_KEY,
         "anthropic-version": "2023-06-01",
     }
     data_payload = {
-        "model": CLAUDE_MODEL,
+        "model": claude_model,
         "messages": [{"role": "user", "content": prompt}],
         "max_tokens": 4096,
         "temperature": 0.7,
@@ -90,7 +90,7 @@ def update_response_table(base_id, platform_name, submission_id, response):
 
 
 @celery.task
-def generate_content_for_platform(platform, base_id, submission_id):
+def generate_content_for_platform(platform, base_id, submission_id, claude_model):
     submission_record = get_submission_by_id(base_id, submission_id)
     strategy_text = get_platform_strategy(base_id, platform)
     prompt_template = get_platform_prompt(base_id, platform)
@@ -104,7 +104,7 @@ def generate_content_for_platform(platform, base_id, submission_id):
         "Strategy": strategy_text,
     }
     prompt = prompt_template.format().format(**prompt_data)
-    response = send_prompt_to_claude(prompt)
+    response = send_prompt_to_claude(prompt, claude_model)
 
     if response:
         update_response_table(base_id, platform, submission_id, response)
@@ -120,6 +120,7 @@ def generate_content_route():
     app.logger.info(f"Request data: {data}")
 
     submission_data = data.get("submission_id")
+    claude_model = data.get("claude_model")
     app.logger.info(f"Submission data: {submission_data}")
 
     if submission_data:
@@ -137,7 +138,7 @@ def generate_content_route():
         for platform in platforms:
             app.logger.info(f"Generating content for platform: {platform}")
             generate_content_for_platform.apply_async(
-                args=(platform, AIRTABLE_BASE_ID, submission_id)
+                args=(platform, AIRTABLE_BASE_ID, submission_id, claude_model)
             )
             time.sleep(5)
 
