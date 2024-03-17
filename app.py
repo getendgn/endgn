@@ -84,7 +84,10 @@ def send_prompt_to_claude(prompt, claude_model):
 def update_response_table(base_id, platform_name, submission_id, response, user_id):
     base = Base(api, base_id)
     table = Table(None, base, platform_name)
-    fields = {"Submission": [submission_id], "Post Body": response, "User": [user_id]}
+    fields = {"Submission": [submission_id], "Post Body": response}
+    print(user_id)
+    if user_id:
+        fields["User"] = [user_id]
     table.create(fields)
 
 
