@@ -120,12 +120,15 @@ def generate_content_route():
     app.logger.info(f"Request data: {data}")
 
     submission_data = data.get("submission_id")
-    claude_model = data.get("claude_model")
     app.logger.info(f"Submission data: {submission_data}")
 
     if submission_data:
         submission_id = submission_data.get("submissionId")
         app.logger.info(f"Submission ID: {submission_id}")
+
+        # from submission table read claude_model from airtable
+        submission_record = get_submission_by_id(AIRTABLE_BASE_ID, submission_id)
+        claude_model = submission_record["fields"].get("Anthropic Model", CLAUDE_MODEL)
 
         if not submission_id:
             app.logger.error("Invalid submission ID")
