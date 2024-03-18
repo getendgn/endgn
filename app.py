@@ -100,7 +100,7 @@ def update_response_table(base_id, platform_name, submission_id, response, user_
     retry_kwargs={"max_retries": 5},
     rate_limit="7/m",
 )
-def generate_content_for_platform(platform, base_id, submission_id, claude_model):
+def generate_content_for_platform(platform, base_id, submission_id):
     submission_record = get_submission_by_id(base_id, submission_id)
     strategy_text = get_platform_strategy(base_id, platform)
     prompt_template = get_platform_prompt(base_id, platform)
@@ -114,6 +114,9 @@ def generate_content_for_platform(platform, base_id, submission_id, claude_model
         "Strategy": strategy_text,
     }
     prompt = prompt_template.format().format(**prompt_data)
+    claude_model = (
+        submission_record["fields"].get("Anthropic Model", CLAUDE_MODEL).strip()
+    )
     response = send_prompt_to_claude(prompt, claude_model)
 
     if response:
@@ -137,11 +140,6 @@ def generate_content_route():
         submission_id = submission_data.get("submissionId")
         app.logger.info(f"Submission ID: {submission_id}")
 
-        submission_record = get_submission_by_id(AIRTABLE_BASE_ID, submission_id)
-        claude_model = (
-            submission_record["fields"].get("Anthropic Model", CLAUDE_MODEL).strip()
-        )
-
         if not submission_id:
             app.logger.error("Invalid submission ID")
             return jsonify({"error": "Invalid submission ID."}), 400
@@ -154,7 +152,7 @@ def generate_content_route():
             app.logger.info(f"Generating content for platform: {platform}")
             generate_content_for_platform.apply_async(
                 countdown=i * 10,
-                args=(platform, AIRTABLE_BASE_ID, submission_id, claude_model),
+                args=(platform, AIRTABLE_BASE_ID, submission_id),
             )
 
         app.logger.info("Content generation tasks queued")
