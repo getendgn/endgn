@@ -80,7 +80,7 @@ def send_prompt_to_claude(prompt, claude_model):
         app.logger.error(
             f"Failed to send prompt to Claude. Status code: {response.status_code}"
         )
-        return None
+        raise Exception("Failed to send prompt to Claude.")
 
 
 def update_response_table(base_id, platform_name, submission_id, response, user_id):
@@ -94,7 +94,12 @@ def update_response_table(base_id, platform_name, submission_id, response, user_
     table.create(fields)
 
 
-@celery.task(rate_limit="7/m")
+@celery.task(
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_kwargs={"max_retries": 5},
+    rate_limit="7/m",
+)
 def generate_content_for_platform(platform, base_id, submission_id, claude_model):
     submission_record = get_submission_by_id(base_id, submission_id)
     strategy_text = get_platform_strategy(base_id, platform)
