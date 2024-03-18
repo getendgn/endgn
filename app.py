@@ -133,7 +133,9 @@ def generate_content_route():
         app.logger.info(f"Submission ID: {submission_id}")
 
         submission_record = get_submission_by_id(AIRTABLE_BASE_ID, submission_id)
-        claude_model = submission_record["fields"].get("Anthropic Model", CLAUDE_MODEL)
+        claude_model = (
+            submission_record["fields"].get("Anthropic Model", CLAUDE_MODEL).strip()
+        )
 
         if not submission_id:
             app.logger.error("Invalid submission ID")
