@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 import os
 import requests
 from pyairtable import Api, Table, Base
+from pyairtable.formulas import match
 from celery import Celery
 from cryptography.fernet import Fernet
 
@@ -117,7 +118,29 @@ def generate_content_for_platform(platform, base_id, submission_id):
     claude_model = (
         submission_record["fields"].get("Anthropic Model", CLAUDE_MODEL).strip()
     )
-    response = send_prompt_to_claude(prompt, claude_model)
+
+    user_id = submission_record["fields"].get("User", [None])[0]
+    api_key = None
+
+    if user_id:
+        base = Base(api, base_id)
+        keys_table = Table(None, base, "Keys")
+        records = keys_table.all(formula=f"{{Provider}} = 'Anthropic'")
+        encrypted_api_key = next(
+            (
+                rec["fields"].get("Key")
+                for rec in records
+                if rec["fields"].get("User") == [user_id]
+            ),
+            None,
+        )
+
+        if encrypted_api_key:
+            api_key = decrypt_key(encrypted_api_key)
+
+    response = send_prompt_to_claude(
+        prompt, claude_model, user_id, api_key or ANTHROPIC_API_KEY
+    )
 
     if response:
         user_id = submission_record["fields"].get("User", [None])[0]
