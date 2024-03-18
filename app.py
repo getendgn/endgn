@@ -60,10 +60,10 @@ def get_platform_prompt(base_id, platform_name):
     return records[0]["fields"].get("Prompt") if records else None
 
 
-def send_prompt_to_claude(prompt, claude_model):
+def send_prompt_to_claude(prompt, claude_model, api_key):
     headers = {
         "Content-Type": "application/json",
-        "x-api-key": ANTHROPIC_API_KEY,
+        "x-api-key": api_key,
         "anthropic-version": "2023-06-01",
     }
     data_payload = {
@@ -138,9 +138,7 @@ def generate_content_for_platform(platform, base_id, submission_id):
         if encrypted_api_key:
             api_key = decrypt_key(encrypted_api_key)
 
-    response = send_prompt_to_claude(
-        prompt, claude_model, user_id, api_key or ANTHROPIC_API_KEY
-    )
+    response = send_prompt_to_claude(prompt, claude_model, api_key or ANTHROPIC_API_KEY)
 
     if response:
         user_id = submission_record["fields"].get("User", [None])[0]
