@@ -6,8 +6,10 @@ from pyairtable.formulas import match
 from celery import Celery
 from cryptography.fernet import Fernet
 
+# Initialize flask app
 app = Flask(__name__)
 
+# Environment variables
 CLAUDE_MODEL = os.getenv("CLAUDE_MODEL")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 AIRTABLE_API_KEY = os.getenv("AIRTABLE_API_KEY")
@@ -36,10 +38,11 @@ if not app.debug:
     handler.setLevel(logging.ERROR)
     app.logger.addHandler(handler)
 
+# Initialize Airtable API
+api = Api(AIRTABLE_API_KEY)
+
+
 # Helper functions
-api = Api(AIRTABLE_API_KEY)  # Initialize once and use globally
-
-
 def get_submission_by_id(base_id, submission_id):
     base = Base(api, base_id)
     table = Table(None, base, "Submissions")
@@ -139,7 +142,6 @@ def generate_content_for_platform(platform, base_id, submission_id):
             api_key = decrypt_key(encrypted_api_key)
 
     response = send_prompt_to_claude(prompt, claude_model, api_key or ANTHROPIC_API_KEY)
-
     if response:
         user_id = submission_record["fields"].get("User", [None])[0]
         update_response_table(base_id, platform, submission_id, response, user_id)
