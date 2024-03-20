@@ -138,12 +138,8 @@ def generate_content_for_platform(platform, base_id, submission_id):
             None,
         )
 
-        print("Encrypted key:", encrypted_api_key)
-
         if encrypted_api_key:
             api_key = decrypt_key(encrypted_api_key)
-
-    print("Decrypted key:", api_key)
 
     if not api_key:
         raise Exception("No api key provided.")
