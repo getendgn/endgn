@@ -141,7 +141,10 @@ def generate_content_for_platform(platform, base_id, submission_id):
         if encrypted_api_key:
             api_key = decrypt_key(encrypted_api_key)
 
-    response = send_prompt_to_claude(prompt, claude_model, api_key or ANTHROPIC_API_KEY)
+    if not api_key:
+        raise Exception("No api key provided.")
+
+    response = send_prompt_to_claude(prompt, claude_model, api_key)
     if response:
         user_id = submission_record["fields"].get("User", [None])[0]
         update_response_table(base_id, platform, submission_id, response, user_id)
