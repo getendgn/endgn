@@ -259,7 +259,12 @@ def create_post():
         headers={"Content-Type": "application/json"},
     )
 
-    print("Response", response.content)
+    if response.ok:
+        return jsonify({"message": "Post created successfully."})
+    else:
+        app.logger.error("Failed to create post. Request", request.data)
+        app.logger.error("Response", response.content)
+        return jsonify({"error": "Failed to create post."}), 500
 
 
 if __name__ == "__main__":
