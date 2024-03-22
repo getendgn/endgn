@@ -276,21 +276,14 @@ def post_to_list():
     media_urls = data.get("media_urls")
 
     response = create_metricool_list_post(blog_id, user_id, list_id)
-    print(response.content)
-    print(response.ok)
     if not response.ok:
         app.logger.error("Failed to create list post.")
         return jsonify({"error": "Failed to create list post."}), 500
 
-    response_json = response.json()
-    created_post = (
-        response_json()[0]
-        if len(response_json) == 1
-        else response_json[-1] if len(response_json) > 1 else None
-    )
+    created_post = response.json()[-1]
     # update created post with data
     response = update_metricool_list_post(
-        blog_id, user_id, list_id, created_post["postid"], post_text, media_urls
+        blog_id, user_id, list_id, created_post["id"], post_text, media_urls
     )
 
     if not response.ok:
