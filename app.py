@@ -233,25 +233,26 @@ def create_post():
     media_urls = data.get("media_urls")
 
     scheduled_post_data = {
-        "text": post_text,
+        "providers": [{"network": platform}],
         "publicationDate": {
             "dateTime": (datetime.now(timezone.utc) + timedelta(days=1)).strftime(
                 "%Y-%m-%dT%H:%M:%S"
             ),
             "timezone": "Australia/Adelaide",
         },
+        "text": post_text,
         "media": media_urls,
-        "providers": [{"network": platform}],
+        "draft": True,
         "autoPublish": True,
         "shortener": True,
-        "draft": True,
         "autolistData": {"id": list_id},
         "descendants": [],
     }
 
     if platform == "pinterest":
         scheduled_post_data["pinterestData"] = {"pinNewFormat": True}
-
+    
+    print(scheduled_post_data)
     response = requests.post(
         METRICOOL_API_URL
         + f"/v2/scheduler/posts?blogId={blog_id}&userId={user_id}&userToken={METRICOOL_USER_TOKEN}",
