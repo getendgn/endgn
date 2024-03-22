@@ -262,8 +262,8 @@ def create_post():
     if response.ok:
         return jsonify({"message": "Post created successfully."})
     else:
-        app.logger.error("Failed to create post. Request", request.data)
-        app.logger.error("Response", response.content)
+        app.logger.error("Failed to create post. Request %s", request.data)
+        app.logger.error("Response %s", response.content)
         return jsonify({"error": "Failed to create post."}), 500
 
 
