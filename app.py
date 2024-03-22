@@ -225,7 +225,7 @@ def decrypt_key(encrypted_key):
 @app.route("/create_post", methods=["POST"])
 def create_post():
     data = request.get_json()
-    platform = data.get("platform")
+    platform = data.get("platform").lower()
     blog_id = data.get("blog_id")
     user_id = data.get("user_id")
     list_id = data.get("list_id")
@@ -238,7 +238,7 @@ def create_post():
             "dateTime": (datetime.now(timezone.utc) + timedelta(days=1)).strftime(
                 "%Y-%m-%dT%H:%M:%S"
             ),
-            "timezone": "UTC",
+            "timezone": "Australia/Adelaide",
         },
         "media": media_urls,
         "providers": [{"network": platform}],
@@ -246,47 +246,11 @@ def create_post():
         "shortener": True,
         "draft": True,
         "autolistData": {"id": list_id},
+        "descendants": [],
     }
 
-    if platform == "LinkedIn":
-        scheduled_post_data["linkedInData"] = (
-            # {
-            #     "documentTitle": "string",
-            #     "publishImagesAsPDF": False,
-            # },
-        )
-    elif platform == "Twitter":
-        scheduled_post_data["twitterData"] = {}
-        # {[{"username": "string", "x": 0, "y": 0}]}
-    elif platform == "Facebook":
-        scheduled_post_data["facebookData"] = {}
-        #     "facebookData": {
-        #       "boost": 0,
-        #       "boostPayer": "string",
-        #       "boostBeneficiary": "string",
-        #       "type": "string",
-        #       "title": "string"
-        #      },
-    elif platform == "Instagram":
-        scheduled_post_data["instagramData"] = {}
-    elif platform == "YouTube":
-        scheduled_post_data["youtubeData"] = {}
-        # {
-        #     "title": "string",
-        #     "type": "string",
-        #     "privacy": "string",
-        #     "tags": ["string"],
-        #     "category": "string",
-        #     "madeForKids": true,
-        # },
-    elif platform == "Pinterest":
-        scheduled_post_data["pinterestData"] = {}
-        #     "pinterestData": {
-        #       "boardId": "string",
-        #       "pinTitle": "string",
-        #       "pinLink": "string",
-        #       "pinNewFormat": true
-        #   },
+    if platform == "pinterest":
+        scheduled_post_data["pinterestData"] = {"pinNewFormat": True}
 
     response = requests.post(
         METRICOOL_API_URL
