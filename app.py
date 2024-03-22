@@ -5,6 +5,7 @@ from pyairtable import Api, Table, Base
 from pyairtable.formulas import match
 from celery import Celery
 from cryptography.fernet import Fernet
+from datetime import datetime, timedelta, timezone
 
 # Initialize flask app
 app = Flask(__name__)
@@ -15,6 +16,8 @@ ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 AIRTABLE_API_KEY = os.getenv("AIRTABLE_API_KEY")
 AIRTABLE_BASE_ID = os.getenv("AIRTABLE_BASE_ID")
 ENCRYPTION_KEY = os.getenv("ENCRYPTION_KEY")
+METRICOOL_USER_TOKEN = os.getenv("METRICOOL_USER_TOKEN")
+METRICOOL_API_URL = "https://app.metricool.com/api"
 
 # Celery configuration
 REDIS_URL = os.getenv("REDIS_URL")
@@ -217,6 +220,82 @@ def encrypt_key():
 def decrypt_key(encrypted_key):
     cipher_suite = Fernet(ENCRYPTION_KEY)
     return cipher_suite.decrypt(encrypted_key.encode()).decode()
+
+
+@app.route("/create_post", methods=["POST"])
+def create_post():
+    data = request.get_json()
+    platform = data.get("platform")
+    blog_id = data.get("blog_id")
+    user_id = data.get("user_id")
+    list_id = data.get("list_id")
+    post_text = data.get("text")
+    media_urls = data.get("media_urls")
+
+    scheduled_post_data = {
+        "text": post_text,
+        "publicationDate": {
+            "dateTime": (datetime.now(timezone.utc) + timedelta(days=1)).strftime(
+                "%Y-%m-%dT%H:%M:%S"
+            ),
+            "timezone": "UTC",
+        },
+        "media": media_urls,
+        "providers": [{"network": platform}],
+        "autoPublish": True,
+        "shortener": True,
+        "draft": True,
+        "autolistData": {"id": list_id},
+    }
+
+    if platform == "LinkedIn":
+        scheduled_post_data["linkedInData"] = (
+            # {
+            #     "documentTitle": "string",
+            #     "publishImagesAsPDF": False,
+            # },
+        )
+    elif platform == "Twitter":
+        scheduled_post_data["twitterData"] = {}
+        # {[{"username": "string", "x": 0, "y": 0}]}
+    elif platform == "Facebook":
+        scheduled_post_data["facebookData"] = {}
+        #     "facebookData": {
+        #       "boost": 0,
+        #       "boostPayer": "string",
+        #       "boostBeneficiary": "string",
+        #       "type": "string",
+        #       "title": "string"
+        #      },
+    elif platform == "Instagram":
+        scheduled_post_data["instagramData"] = {}
+    elif platform == "YouTube":
+        scheduled_post_data["youtubeData"] = {}
+        # {
+        #     "title": "string",
+        #     "type": "string",
+        #     "privacy": "string",
+        #     "tags": ["string"],
+        #     "category": "string",
+        #     "madeForKids": true,
+        # },
+    elif platform == "Pinterest":
+        scheduled_post_data["pinterestData"] = {}
+        #     "pinterestData": {
+        #       "boardId": "string",
+        #       "pinTitle": "string",
+        #       "pinLink": "string",
+        #       "pinNewFormat": true
+        #   },
+
+    response = requests.post(
+        METRICOOL_API_URL
+        + f"/v2/scheduler/posts?blogId={blog_id}&userId={user_id}&userToken={METRICOOL_USER_TOKEN}",
+        data=scheduled_post_data,
+        headers={"Content-Type": "application/json"},
+    )
+
+    print("Response", response.json())
 
 
 if __name__ == "__main__":
