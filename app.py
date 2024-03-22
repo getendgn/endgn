@@ -222,7 +222,7 @@ def decrypt_key(encrypted_key):
     return cipher_suite.decrypt(encrypted_key.encode()).decode()
 
 
-@app.route("/create_post", methods=["POST"])
+@app.route("/create-post", methods=["POST"])
 def create_post():
     data = request.get_json()
     platform = data.get("platform").lower()
