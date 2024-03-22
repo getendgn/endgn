@@ -259,7 +259,7 @@ def create_post():
         headers={"Content-Type": "application/json"},
     )
 
-    print("Response", response.json())
+    print("Response", response.content)
 
 
 if __name__ == "__main__":
