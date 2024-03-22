@@ -1,8 +1,6 @@
+import os, requests, json
 from flask import Flask, request, jsonify
-import os
-import requests
 from pyairtable import Api, Table, Base
-from pyairtable.formulas import match
 from celery import Celery
 from cryptography.fernet import Fernet
 from datetime import datetime, timedelta, timezone
@@ -251,12 +249,11 @@ def create_post():
 
     if platform == "pinterest":
         scheduled_post_data["pinterestData"] = {"pinNewFormat": True}
-    
-    print(scheduled_post_data)
+
     response = requests.post(
         METRICOOL_API_URL
         + f"/v2/scheduler/posts?blogId={blog_id}&userId={user_id}&userToken={METRICOOL_USER_TOKEN}",
-        data=scheduled_post_data,
+        data=json.dumps(scheduled_post_data),
         headers={"Content-Type": "application/json"},
     )
 
