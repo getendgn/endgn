@@ -1,4 +1,4 @@
-import os, requests, json
+import os, requests
 from flask import Flask, request, jsonify
 from pyairtable import Api, Table, Base
 from celery import Celery
@@ -220,10 +220,10 @@ def decrypt_key(encrypted_key):
     return cipher_suite.decrypt(encrypted_key.encode()).decode()
 
 
-@app.route("/create-post", methods=["POST"])
-def create_post():
+@app.route("/schedule-post", methods=["POST"])
+def schedule_post():
     data = request.get_json()
-    platform = data.get("platform").lower()
+    platform = data.get("platform", "").lower()
     blog_id = data.get("blog_id")
     user_id = data.get("user_id")
     list_id = data.get("list_id")
@@ -240,33 +240,76 @@ def create_post():
         },
         "text": post_text,
         "media": media_urls,
-        "draft": True,
         "autoPublish": True,
         "shortener": True,
-        "autolistData": {"id": list_id},
         "descendants": [],
     }
 
     if platform == "pinterest":
         scheduled_post_data["pinterestData"] = {"pinNewFormat": True}
 
-    response = post_to_metricool(blog_id, user_id, scheduled_post_data)
+    response = schedule_metricool_post(blog_id, user_id, scheduled_post_data)
 
     if response.ok:
-        return jsonify({"message": "Post created successfully."})
+        return jsonify({"message": "Post scheduled successfully."})
     else:
-        app.logger.error("Failed to create post. Request %s", request.data)
+        app.logger.error("Failed to schedule post. Request %s", request.data)
         app.logger.error("Response %s", response.content)
         return jsonify({"error": "Failed to create post."}), 500
 
 
-def post_to_metricool(blog_id, user_id, post_data):
-    url = (
-        METRICOOL_API_URL
-        + f"/v2/scheduler/posts?blogId={blog_id}&userId={user_id}&userToken={METRICOOL_USER_TOKEN}"
-    )
+def schedule_metricool_post(blog_id, user_id, post_data):
+    url = f"{METRICOOL_API_URL}/v2/scheduler/posts?blogId={blog_id}&userId={user_id}&userToken={METRICOOL_USER_TOKEN}"
     headers = {"Content-Type": "application/json"}
-    return requests.post(url, data=json.dumps(post_data), headers=headers)
+    return requests.post(url, json=post_data, headers=headers)
+
+
+# insert post to autolist
+@app.route("/post-to-list", methods=["POST"])
+def post_to_list():
+    data = request.get_json()
+    platform = data.get("platform").lower()
+    blog_id = data.get("blog_id")
+    user_id = data.get("user_id")
+    list_id = data.get("list_id")
+    post_text = data.get("text")
+    media_urls = data.get("media_urls")
+
+    response = create_metricool_list_post(blog_id, user_id, list_id)
+    if not response.ok:
+        app.logger.error("Failed to create list post.")
+        return jsonify({"error": "Failed to create list post."}), 500
+
+    created_post = response.json()[-1]
+    # update created post with data
+    response = update_metricool_list_post(
+        blog_id, user_id, list_id, created_post["postid"], post_text, media_urls
+    )
+
+    if not response.ok:
+        app.logger.error("Failed to update list post.")
+        return jsonify({"error": "Failed to update list post."}), 500
+
+    return jsonify({"message": "Post added to list successfully."})
+
+
+def create_metricool_list_post(blog_id, user_id, list_id):
+    url = f"{METRICOOL_API_URL}/lists/posts/create?blogId={blog_id}&userId={user_id}&listId={list_id}&userToken={METRICOOL_USER_TOKEN}"
+    return requests.get(url)
+
+
+def update_metricool_list_post(
+    blog_id, user_id, list_id, post_id, post_text, media_urls
+):
+    url = f"{METRICOOL_API_URL}/lists/posts/update?blogId={blog_id}&userId={user_id}&userToken={METRICOOL_USER_TOKEN}"
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "postid": post_id,
+        "listid": list_id,
+        "text": post_text,
+        "pictures": media_urls,
+    }
+    return requests.post(url, json=payload, headers=headers)
 
 
 if __name__ == "__main__":
