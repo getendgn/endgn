@@ -250,12 +250,7 @@ def create_post():
     if platform == "pinterest":
         scheduled_post_data["pinterestData"] = {"pinNewFormat": True}
 
-    response = requests.post(
-        METRICOOL_API_URL
-        + f"/v2/scheduler/posts?blogId={blog_id}&userId={user_id}&userToken={METRICOOL_USER_TOKEN}",
-        data=json.dumps(scheduled_post_data),
-        headers={"Content-Type": "application/json"},
-    )
+    response = post_to_metricool(blog_id, user_id, scheduled_post_data)
 
     if response.ok:
         return jsonify({"message": "Post created successfully."})
@@ -263,6 +258,15 @@ def create_post():
         app.logger.error("Failed to create post. Request %s", request.data)
         app.logger.error("Response %s", response.content)
         return jsonify({"error": "Failed to create post."}), 500
+
+
+def post_to_metricool(blog_id, user_id, post_data):
+    url = (
+        METRICOOL_API_URL
+        + f"/v2/scheduler/posts?blogId={blog_id}&userId={user_id}&userToken={METRICOOL_USER_TOKEN}"
+    )
+    headers = {"Content-Type": "application/json"}
+    return requests.post(url, data=json.dumps(post_data), headers=headers)
 
 
 if __name__ == "__main__":
