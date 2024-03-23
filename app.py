@@ -48,24 +48,30 @@ api = Api(AIRTABLE_API_KEY)
 
 
 # Helper functions
-def get_submission_by_id(base_id, submission_id):
-    base = Base(api, base_id)
+def get_submission_by_id(submission_id):
+    base = Base(api, AIRTABLE_BASE_ID)
     table = Table(None, base, "Submissions")
     return table.get(submission_id)
 
 
-def get_platform_strategy(base_id, platform_name):
-    base = Base(api, base_id)
-    table = Table(None, base, "Strategies and Templates")
-    records = table.all(formula=f"{{Platform}} = '{platform_name}'")
-    return records[0]["fields"].get("Text") if records else None
+def get_platform_strategy(platform_name, user_id):
+    record = get_user_record(user_id)
+    platform_name.replace("LinkedIn Articles", "LinkedIn").replace("Blogs", "Blog")
+    field_name = f"{platform_name} Strategy"
+    return record["fields"].get(field_name)
 
 
-def get_platform_prompt(base_id, platform_name):
-    base = Base(api, base_id)
-    table = Table(None, base, "Prompts")
-    records = table.all(formula=f"{{Platform}} = '{platform_name}'")
-    return records[0]["fields"].get("Prompt") if records else None
+def get_platform_prompt(platform_name, user_id):
+    record = get_user_record(user_id)
+    platform_name.replace("LinkedIn Articles", "LinkedIn").replace("Blogs", "Blog")
+    field_name = f"{platform_name} Prompt"
+    return record["fields"].get(field_name)
+
+
+def get_user_record(user_id):
+    base = Base(api, AIRTABLE_BASE_ID)
+    table = Table(None, base, "Users")
+    return table.get(user_id)
 
 
 def send_prompt_to_claude(prompt, claude_model, api_key):
@@ -92,8 +98,8 @@ def send_prompt_to_claude(prompt, claude_model, api_key):
         raise Exception("Failed to send prompt to Claude.")
 
 
-def update_response_table(base_id, platform_name, submission_id, response, user_id):
-    base = Base(api, base_id)
+def update_response_table(platform_name, submission_id, response, user_id):
+    base = Base(api, AIRTABLE_BASE_ID)
     table = Table(None, base, platform_name)
     fields = {"Submission": [submission_id], "Post Body": response}
 
@@ -109,10 +115,13 @@ def update_response_table(base_id, platform_name, submission_id, response, user_
     retry_kwargs={"max_retries": 5},
     rate_limit="7/m",
 )
-def generate_content_for_platform(platform, base_id, submission_id):
-    submission_record = get_submission_by_id(base_id, submission_id)
-    strategy_text = get_platform_strategy(base_id, platform)
-    prompt_template = get_platform_prompt(base_id, platform)
+def generate_content_for_platform(platform, submission_id):
+    submission_record = get_submission_by_id(submission_id)
+
+    user_id = submission_record["fields"].get("User", [None])[0]
+
+    strategy_text = get_platform_strategy(platform, user_id)
+    prompt_template = get_platform_prompt(platform, user_id)
 
     if not prompt_template or not strategy_text:
         return f"No prompt or strategy found for {platform}"
@@ -127,11 +136,9 @@ def generate_content_for_platform(platform, base_id, submission_id):
         submission_record["fields"].get("Anthropic Model", CLAUDE_MODEL).strip()
     )
 
-    user_id = submission_record["fields"].get("User", [None])[0]
     api_key = None
-
     if user_id:
-        base = Base(api, base_id)
+        base = Base(api, AIRTABLE_BASE_ID)
         keys_table = Table(None, base, "Keys")
         records = keys_table.all(formula=f"{{Provider}} = 'Anthropic'")
         encrypted_api_key = next(
@@ -152,7 +159,7 @@ def generate_content_for_platform(platform, base_id, submission_id):
     response = send_prompt_to_claude(prompt, claude_model, api_key)
     if response:
         user_id = submission_record["fields"].get("User", [None])[0]
-        update_response_table(base_id, platform, submission_id, response, user_id)
+        update_response_table(platform, submission_id, response, user_id)
         return f"Content generated and saved to Airtable for {platform}"
     else:
         return f"Error generating content for {platform}"
