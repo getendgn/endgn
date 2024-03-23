@@ -4,6 +4,11 @@ from pyairtable import Api, Table, Base
 from celery import Celery
 from cryptography.fernet import Fernet
 from datetime import datetime, timedelta, timezone
+from .metricool import (
+    schedule_metricool_post,
+    create_metricool_list_post,
+    update_metricool_list_post,
+)
 
 # Initialize flask app
 app = Flask(__name__)
@@ -14,8 +19,7 @@ ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 AIRTABLE_API_KEY = os.getenv("AIRTABLE_API_KEY")
 AIRTABLE_BASE_ID = os.getenv("AIRTABLE_BASE_ID")
 ENCRYPTION_KEY = os.getenv("ENCRYPTION_KEY")
-METRICOOL_USER_TOKEN = os.getenv("METRICOOL_USER_TOKEN")
-METRICOOL_API_URL = "https://app.metricool.com/api"
+
 
 # Celery configuration
 REDIS_URL = os.getenv("REDIS_URL")
@@ -258,13 +262,6 @@ def schedule_post():
         return jsonify({"error": "Failed to create post."}), 500
 
 
-def schedule_metricool_post(blog_id, user_id, post_data):
-    url = f"{METRICOOL_API_URL}/v2/scheduler/posts?blogId={blog_id}&userId={user_id}&userToken={METRICOOL_USER_TOKEN}"
-    headers = {"Content-Type": "application/json"}
-    return requests.post(url, json=post_data, headers=headers)
-
-
-# insert post to autolist
 @app.route("/post-to-list", methods=["POST"])
 def post_to_list():
     data = request.get_json()
@@ -291,25 +288,6 @@ def post_to_list():
         return jsonify({"error": "Failed to update list post."}), 500
 
     return jsonify({"message": "Post added to list successfully."})
-
-
-def create_metricool_list_post(blog_id, user_id, list_id):
-    url = f"{METRICOOL_API_URL}/lists/posts/create?blogId={blog_id}&userId={user_id}&listid={list_id}&position=0&userToken={METRICOOL_USER_TOKEN}"
-    return requests.get(url)
-
-
-def update_metricool_list_post(
-    blog_id, user_id, list_id, post_id, post_text, media_urls
-):
-    url = f"{METRICOOL_API_URL}/lists/posts/update?blogId={blog_id}&userId={user_id}&userToken={METRICOOL_USER_TOKEN}"
-    headers = {"Content-Type": "application/json"}
-    payload = {
-        "postid": post_id,
-        "listid": list_id,
-        "text": post_text,
-        "pictures": media_urls,
-    }
-    return requests.post(url, json=payload, headers=headers)
 
 
 if __name__ == "__main__":
