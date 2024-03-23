@@ -4,7 +4,7 @@ from pyairtable import Api, Table, Base
 from celery import Celery
 from cryptography.fernet import Fernet
 from datetime import datetime, timedelta, timezone
-from .metricool import (
+from metricool import (
     schedule_metricool_post,
     create_metricool_list_post,
     update_metricool_list_post,
