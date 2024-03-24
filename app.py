@@ -266,7 +266,7 @@ def schedule_post():
     else:
         app.logger.error("Failed to schedule post. Request %s", request.data)
         app.logger.error("Response %s", response.content)
-        return jsonify({"error": "Failed to create post."}), 500
+        return jsonify({"error": "Failed to create post."}), 400
 
 
 @app.route("/post-to-list", methods=["POST"])
@@ -282,7 +282,7 @@ def post_to_list():
     response = create_metricool_list_post(blog_id, user_id, list_id)
     if response.status_code != 200:
         app.logger.error("Failed to create list post.")
-        return jsonify({"error": "Failed to create list post."}), 500
+        return jsonify({"error": "Failed to create list post."}), 400
 
     created_post = response.json()[-1]
     # update created post with data
@@ -292,7 +292,7 @@ def post_to_list():
 
     if not response.ok:
         app.logger.error("Failed to update list post.")
-        return jsonify({"error": "Failed to update list post."}), 500
+        return jsonify({"error": "Failed to update list post."}), 400
 
     return jsonify({"message": "Post added to list successfully."})
 
