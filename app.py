@@ -71,7 +71,7 @@ def get_platform_prompt(platform_name, user_id):
 def get_user_record(user_id):
     base = Base(api, AIRTABLE_BASE_ID)
     table = Table(None, base, "Users")
-    return table.get(user_id)
+    return table.first(formula=f"{{UserID}} = '{user_id}'")
 
 
 def send_prompt_to_claude(prompt, claude_model, api_key):
