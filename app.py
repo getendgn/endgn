@@ -190,7 +190,7 @@ def generate_content_route():
             app.logger.info(f"Generating content for platform: {platform}")
             generate_content_for_platform.apply_async(
                 countdown=i * 10,
-                args=(platform, AIRTABLE_BASE_ID, submission_id),
+                args=(platform, submission_id),
             )
 
         app.logger.info("Content generation tasks queued")
