@@ -28,7 +28,7 @@ REDIS_URL = os.getenv("REDIS_URL")
 app.config["CELERY_BROKER_URL"] = (
     os.getenv("CELERY_BROKER_URL", REDIS_URL) or "redis://localhost:6379/"
 )
-app.config["CELERY_RESULT_BACKEND"] = (
+app.config["result_backend"] = (
     os.getenv("CELERY_RESULT_BACKEND", REDIS_URL) or "redis://localhost:6379/"
 )
 
