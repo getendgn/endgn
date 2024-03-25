@@ -5,3 +5,5 @@ celery
 Redis
 gunicorn==21.2.0
 cryptography
+google-auth
+google-api-python-client
