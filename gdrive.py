@@ -51,7 +51,7 @@ def create_folder(service, folder_name, parent_id):
         folder = service.files().create(body=file_metadata, fields="id").execute()
     except HttpError as err:
         if err.resp.status == 409:  # folder already exists
-            folder_id = get_folder_id(service, parent_id)
+            folder_id = get_folder_id(service, parent_id, folder_name)
             return folder_id
 
         raise Exception(f"Failed to create folder: {err}")
