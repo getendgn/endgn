@@ -1,9 +1,9 @@
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseUpload
 from googleapiclient.errors import HttpError
-from io import BytesIO
+from googleapiclient.http import MediaFileUpload
 from datetime import datetime
+from pathlib import Path
 import os, requests
 
 
@@ -62,7 +62,7 @@ def create_folder(service, folder_name, parent_id):
 def upload_video_to_drive(url, path):
     service = get_service()
 
-    response = requests.get(url, stream=True)
+    response = requests.get(url)
     if not response.ok:
         raise Exception("Failed to download video from video_url")
 
@@ -71,19 +71,23 @@ def upload_video_to_drive(url, path):
         folder_id = create_folder(service, folder_name, parent_folder_id)
         parent_folder_id = folder_id
 
-    folder_id = create_folder(
+    parent_folder_id = create_folder(
         service, datetime.now().strftime("%Y_%m_%d"), parent_folder_id
     )
 
-    media = MediaIoBaseUpload(
-        BytesIO(response.content),
-        mimetype="video/mp4",
-    )
-
     now = datetime.now()
-    file_name = now.hour * 3600 + now.minute * 60 + now.second
+    file_name = f"{now.hour * 3600 + now.minute * 60 + now.second}.mp4"
+
+    Path("tmp").mkdir(parents=True, exist_ok=True)
+    file_path = os.path.join("tmp", file_name)
+
+    with open(file_path, "wb") as f:
+        f.write(response.content)
+
+    media = MediaFileUpload(file_path, resumable=True)
+
     file_metadata = {
-        "name": f"{file_name}.mp4",
+        "name": file_name,
         "parents": [parent_folder_id],
     }
 
@@ -92,5 +96,7 @@ def upload_video_to_drive(url, path):
         .create(body=file_metadata, media_body=media, fields="id")
         .execute()
     )
+
+    os.remove(file_path)
 
     return file.get("id")
