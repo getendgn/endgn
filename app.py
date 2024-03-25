@@ -305,19 +305,21 @@ def post_to_list():
     retry_kwargs={"max_retries": 5},
     rate_limit="7/m",
 )
-def upload_video_to_drive_task(video_url, path):
+def process_video_task(data):
+    video_url = data.get("video_url")
+    customer_name = data.get("customer_name")
+    user_name = data.get("user_name")
+
+    path = f"{customer_name}/{user_name}"
     upload_video_to_drive(video_url, path)
 
 
 @app.route("/process-video", methods=["POST"])
 def process_video():
     data = request.get_json()
-    video_url = data.get("video_url")
-    customer_name = data.get("customer_name")
-    user_name = data.get("user_name")
+    process_video_task.apply_async(args=(data))
 
-    path = f"{customer_name}/{user_name}"
-    upload_video_to_drive_task.apply_async(args=(video_url, path))
+    return jsonify({"message": "Video processing task queued."})
 
 
 if __name__ == "__main__":
