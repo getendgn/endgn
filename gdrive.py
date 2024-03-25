@@ -10,8 +10,7 @@ import logging
 logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
 
 
-ROOT_FOLDER_ID = os.getenv("ROOT_FOLDER_ID")
-# "1QgdqIL8rSXopjic4m3HwngVaOqn7H7gL"
+GDRIVE_ROOT_FOLDER_ID = os.getenv("GDRIVE_ROOT_FOLDER_ID")
 
 
 def authenticate():
@@ -68,7 +67,7 @@ def upload_video_to_drive(url, path):
     if not response.ok:
         raise Exception("Failed to download video from video_url")
 
-    parent_folder_id = ROOT_FOLDER_ID
+    parent_folder_id = GDRIVE_ROOT_FOLDER_ID
     for folder_name in path.split("/"):
         folder_id = create_folder(service, folder_name, parent_folder_id)
         parent_folder_id = folder_id
