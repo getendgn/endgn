@@ -5,6 +5,13 @@ from googleapiclient.http import MediaFileUpload
 from datetime import datetime
 from pathlib import Path
 import os, requests
+import logging
+
+logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
+
+
+ROOT_FOLDER_ID = os.getenv("ROOT_FOLDER_ID")
+# "1QgdqIL8rSXopjic4m3HwngVaOqn7H7gL"
 
 
 def authenticate():
@@ -20,7 +27,7 @@ def authenticate():
 
 def get_service():
     creds = authenticate()
-    return build("drive", "v3", credentials=creds)
+    return build("drive", "v3", credentials=creds, cache_discovery=False)
 
 
 def get_folder_id(service, parent_id, folder_name):
@@ -47,16 +54,11 @@ def create_folder(service, folder_name, parent_id):
         "parents": [parent_id],
     }
 
-    try:
+    folder_id = get_folder_id(service, parent_id, folder_name)
+    if not folder_id:
         folder = service.files().create(body=file_metadata, fields="id").execute()
-    except HttpError as err:
-        if err.resp.status == 409:  # folder already exists
-            folder_id = get_folder_id(service, parent_id, folder_name)
-            return folder_id
 
-        raise Exception(f"Failed to create folder: {err}")
-
-    return folder.get("id")
+    return folder_id or folder.get("id")
 
 
 def upload_video_to_drive(url, path):
@@ -66,7 +68,7 @@ def upload_video_to_drive(url, path):
     if not response.ok:
         raise Exception("Failed to download video from video_url")
 
-    parent_folder_id = "1QgdqIL8rSXopjic4m3HwngVaOqn7H7gL"
+    parent_folder_id = ROOT_FOLDER_ID
     for folder_name in path.split("/"):
         folder_id = create_folder(service, folder_name, parent_folder_id)
         parent_folder_id = folder_id
