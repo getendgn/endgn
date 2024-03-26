@@ -209,6 +209,40 @@ def get_latest_submission(base_id):
     return records[0] if records else None
 
 
+@app.route("/split-out-tweets", methods=["POST"])
+def split_out_tweets():
+    data = request.get_json()
+    twitter_record_id = data.get("twitter_record_id")
+
+    base = Base(api, AIRTABLE_BASE_ID)
+    table = Table(None, base, "Twitter")
+    record = table.get(twitter_record_id)
+    post_body = record["fields"]["Post Body"]
+
+    tweets = re.split(r"\n\n+", post_body.strip())
+
+    for tweet in tweets:
+        tweet = re.sub(r"^Tweet\d+: ", "", tweet)
+        fields = record["fields"]
+        fields = {
+            "Title": tweet,
+            "Post Body": tweet,
+            "Submission": fields.get("Submission"),
+            "Customer": fields.get("Customer"),
+            "User": fields.get("User"),
+            "Created": fields.get("Created"),
+            "Status": fields.get("Status"),
+            "blog_id": fields.get("blog_id"),
+            "user_id": fields.get("user_id"),
+            "list_id": fields.get("list_id"),
+        }
+
+        table.create(fields)
+    table.delete(twitter_record_id)
+
+    return jsonify({"message": "Split out tweets successfully"})
+
+
 @app.route("/encrypt_key", methods=["POST"])
 def encrypt_key():
     data = request.get_json()
