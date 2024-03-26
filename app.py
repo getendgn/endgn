@@ -1,4 +1,4 @@
-import os, requests
+import os, requests, re
 from flask import Flask, request, jsonify
 from pyairtable import Api, Table, Base
 from celery import Celery
@@ -281,20 +281,34 @@ def post_to_list():
     post_text = data.get("text")
     media_urls = data.get("media_urls")
 
-    response = create_metricool_list_post(blog_id, user_id, list_id)
-    if response.status_code != 200:
-        app.logger.error("Failed to create list post.")
-        return jsonify({"error": "Failed to create list post."}), 400
+    def create_and_update_post(blog_id, user_id, list_id, post_text, media_urls):
+        response = create_metricool_list_post(blog_id, user_id, list_id)
 
-    created_post = response.json()[-1]
-    # update created post with data
-    response = update_metricool_list_post(
-        blog_id, user_id, list_id, created_post["id"], post_text, media_urls
-    )
+        if response.status_code != 200:
+            app.logger.error("Failed to create list post.")
+            return False
 
-    if not response.ok:
-        app.logger.error("Failed to update list post.")
-        return jsonify({"error": "Failed to update list post."}), 400
+        create_post = response.json()[-1]
+        response = update_metricool_list_post(
+            blog_id, user_id, list_id, create_post["id"], post_text, media_urls
+        )
+        if not response.ok:
+            app.logger.error("Failed to update list post.")
+            return False
+        return True
+
+    if platform == "twitter":
+        post_text = re.split("\n\n+", post_text.strip())
+        for single_post_text in post_text:
+            single_post_text = re.sub(r"^Tweet\d+:", "", single_post_text)
+
+            if not create_and_update_post(
+                blog_id, user_id, list_id, single_post_text, media_urls
+            ):
+                return jsonify({"error": "Failed to create or update list post."}), 400
+    else:
+        if not create_and_update_post(blog_id, user_id, list_id, post_text, media_urls):
+            return jsonify({"error": "Failed to create or update list post."}), 400
 
     return jsonify({"message": "Post added to list successfully."})
 
