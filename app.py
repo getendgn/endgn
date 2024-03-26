@@ -229,9 +229,6 @@ def split_out_tweets():
             "Post Body": tweet,
             "Submission": fields.get("Submission"),
             "Status": fields.get("Status"),
-            "blog_id": fields.get("blog_id"),
-            "user_id": fields.get("user_id"),
-            "list_id": fields.get("list_id"),
         }
 
         table.create(fields)
