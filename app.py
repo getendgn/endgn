@@ -228,10 +228,9 @@ def split_out_tweets():
             "Title": tweet,
             "Post Body": tweet,
             "Submission": fields.get("Submission"),
-            "User": fields.get("User")[0],
-            "Status": fields.get("Status"),
+            "User": fields.get("User"),
+            "Status": "For Approval",
         }
-
         table.create(fields)
 
     return jsonify({"message": "Split out tweets successfully"})
