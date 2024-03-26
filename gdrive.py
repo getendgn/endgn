@@ -41,8 +41,7 @@ def get_folder_id(service, parent_id, folder_name):
     items = results.get("files", [])
     if items:
         return items[0]["id"]
-
-    return
+    return None
 
 
 def create_folder(service, folder_name, parent_id):
@@ -54,16 +53,17 @@ def create_folder(service, folder_name, parent_id):
     }
 
     folder_id = get_folder_id(service, parent_id, folder_name)
-    if not folder_id:
+    if folder_id is None:
         folder = service.files().create(body=file_metadata, fields="id").execute()
+        folder_id = folder.get("id")
 
-    return folder_id or folder.get("id")
+    return folder_id
 
 
 def upload_video_to_drive(url, path):
     service = get_service()
-
     response = requests.get(url)
+
     if not response.ok:
         raise Exception("Failed to download video from video_url")
 
@@ -87,11 +87,7 @@ def upload_video_to_drive(url, path):
 
     media = MediaFileUpload(file_path, resumable=True)
 
-    file_metadata = {
-        "name": file_name,
-        "parents": [parent_folder_id],
-    }
-
+    file_metadata = {"name": file_name, "parents": [parent_folder_id]}
     file = (
         service.files()
         .create(body=file_metadata, media_body=media, fields="id")
@@ -99,5 +95,4 @@ def upload_video_to_drive(url, path):
     )
 
     os.remove(file_path)
-
     return file.get("id")
