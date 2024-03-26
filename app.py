@@ -228,7 +228,7 @@ def split_out_tweets():
             "Title": tweet,
             "Post Body": tweet,
             "Submission": fields.get("Submission"),
-            "User": fields.get("User"),
+            "User": fields.get("User")[0],
             "Status": fields.get("Status"),
         }
 
