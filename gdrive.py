@@ -60,7 +60,7 @@ def create_folder(service, folder_name, parent_id):
     return folder_id
 
 
-def upload_video_to_drive(url, path):
+def upload_video_to_drive(url, file_name, path):
     service = get_service()
     response = requests.get(url)
 
@@ -76,9 +76,7 @@ def upload_video_to_drive(url, path):
         service, datetime.now().strftime("%Y_%m_%d"), parent_folder_id
     )
 
-    now = datetime.now()
-    file_name = f"{now.hour * 3600 + now.minute * 60 + now.second}.mp4"
-
+    file_name = f"{file_name}.mp4"
     Path("tmp").mkdir(parents=True, exist_ok=True)
     file_path = os.path.join("tmp", file_name)
 
