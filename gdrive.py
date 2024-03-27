@@ -76,7 +76,6 @@ def upload_video_to_drive(url, file_name, path):
         service, datetime.now().strftime("%Y_%m_%d"), parent_folder_id
     )
 
-    file_name = f"{file_name}.mp4"
     Path("tmp").mkdir(parents=True, exist_ok=True)
     file_path = os.path.join("tmp", file_name)
 
