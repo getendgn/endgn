@@ -4,7 +4,7 @@ from datetime import datetime
 import os
 import openai
 
-OPENAI_API_KEY = "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"
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 
 def openai_client():
