@@ -1,10 +1,9 @@
 from pydub import AudioSegment
 from pydub.silence import split_on_silence
 from datetime import datetime
-import os
-import openai
+import os, time, openai
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_API_KEY = "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"
 
 
 def openai_client():
@@ -12,8 +11,8 @@ def openai_client():
 
 
 def create_audio_chunks(video_path):
-    chunks_path = "tmp/chunks"
-    os.makedirs(chunks_path, exist_ok=True)
+    chunks_folder = "tmp/chunks"
+    os.makedirs(chunks_folder, exist_ok=True)
     audio = AudioSegment.from_file(video_path)
     chunks = split_on_silence(
         audio, min_silence_len=1000, silence_thresh=audio.dBFS - 16, keep_silence=200
@@ -28,13 +27,13 @@ def create_audio_chunks(video_path):
         else:
             output_chunks.append(chunk)
 
-    chunk_paths = []
+    chunks_paths = []
     for i, chunk in enumerate(output_chunks):
         t = (datetime.now() - datetime.now()).seconds
-        exported = chunk.export(f"{chunks_path}/chunk_{t}_{i}.wav", format="wav")
-        chunk_paths.append(exported.name)
-
-    return chunk_paths
+        path = f"{chunks_folder}/{t}_{i}.wav"
+        chunk.export(path, format="wav")
+        chunks_paths.append(path)
+    return chunks_paths
 
 
 def transcribe_video(video_path):
@@ -42,13 +41,15 @@ def transcribe_video(video_path):
     chunk_paths = create_audio_chunks(video_path)
 
     client = openai_client()
-    for chunk_path in chunk_paths:
+    for i, chunk_path in enumerate(chunk_paths):
         with open(chunk_path, "rb") as f:
             audio_bytes = f.read()
 
         response = client.audio.transcriptions.create(
             model="whisper-1", file=audio_bytes
         )
+        print(response["text"])
         transcription += response["text"]
+        time.sleep(5 * i)
 
     print(transcription)
