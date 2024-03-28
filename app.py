@@ -10,6 +10,7 @@ from metricool import (
     update_metricool_list_post,
 )
 from gdrive import upload_video_to_drive
+from whisper import transcribe_video
 
 
 # Initialize flask app
@@ -333,6 +334,9 @@ def post_to_list():
 def process_video_task(video_url, file_name, customer_name, user_name):
     path = f"{customer_name}/{user_name}"
     upload_video_to_drive(video_url, file_name, path)
+    file_path = os.path.join(customer_name, user_name, file_name)
+
+    transcription = transcribe_video(file_path)
 
 
 @app.route("/process-video", methods=["POST"])

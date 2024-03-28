@@ -91,5 +91,4 @@ def upload_video_to_drive(url, file_name, path):
         .execute()
     )
 
-    os.remove(file_path)
     return file.get("id")
