@@ -10,7 +10,7 @@ from metricool import (
     update_metricool_list_post,
 )
 from gdrive import upload_video_to_drive
-from whisper import transcribe_video
+from transcription import transcribe_video
 
 
 # Initialize flask app
