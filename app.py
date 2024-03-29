@@ -261,6 +261,24 @@ def decrypt_key(encrypted_key):
     return cipher_suite.decrypt(encrypted_key.encode()).decode()
 
 
+def midjourney_imagine(prompt):
+    endpoint = "https://api.midjourneyapi.xyz/mj/v2/imagine"
+    headers = {"X-API-KEY": os.getenv("GO_API_KEY")}
+    data = {
+        "prompt": prompt,
+        "aspect_ratio": "16:9",
+        "process_mode": "fast",
+        "webhook_endpoint": "",
+        "webhook_secret": "",
+    }
+    response = requests.post(endpoint, json=data, headers=headers)
+
+    if response.ok:
+        return response.json()
+
+    raise Exception(f"Failed to send prompt. Status: {response.status_code}")
+
+
 @app.route("/schedule-post", methods=["POST"])
 def schedule_post():
     data = request.get_json()
@@ -334,9 +352,29 @@ def post_to_list():
 def process_video_task(video_url, file_name, customer_name, user_name):
     path = f"{customer_name}/{user_name}"
     upload_video_to_drive(video_url, file_name, path)
-    file_path = os.path.join(customer_name, user_name, file_name)
+    # remove video from airtable
+    # update video table with drive link
 
-    transcription = transcribe_video(file_path)
+    file_path = os.path.join(customer_name, user_name, file_name)
+    transcript = transcribe_video(file_path)
+    os.unlink(file_path)
+    # update video table with transcription
+
+    prompt = f"""Generate a YouTube title, description and a very short engaging hook for thumbnail using the provided transcription, Speak from first-person perspective:
+    "{transcript}"
+    """
+
+    response = send_prompt_to_claude(prompt, CLAUDE_MODEL, ANTHROPIC_API_KEY)
+    title = re.search(r"Title:\n(.*?)\n", response).group(1)
+    description = re.search(r"Description:\n(.*?)\n", response).group(1)
+    hook = re.search(r"Engaging Hook for Thumbnail:\n(.*?)\n", response).group(1)
+    # update airtable
+
+    prompt = f"Write a very detailed prompt for Midjourney to generate 16:9 aspect ratio thumbnail images for youtube video with title {title}, Your response should only include the prompt, without any additional information."
+    mj_prompt = send_prompt_to_claude(prompt, CLAUDE_MODEL, ANTHROPIC_API_KEY)
+
+    response = midjourney_imagine(mj_prompt)
+    print(response)
 
 
 @app.route("/process-video", methods=["POST"])
