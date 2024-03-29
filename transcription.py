@@ -46,7 +46,7 @@ def transcribe_video(video_path):
             response_format="text",
         )
         if transcription:
-            print(f"Transcription {i}: {transcription.text}")
-            full_transcription += transcription.text
+            print(f"Transcription {i}: {transcription}")
+            full_transcription += transcription
 
     return full_transcription
