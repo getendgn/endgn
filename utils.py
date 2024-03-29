@@ -1,4 +1,4 @@
-import requests, os
+import requests, os, time
 from pathlib import Path
 
 
@@ -19,6 +19,7 @@ def download_tmp_video(url, file_name):
 
 def midjourney_imagine(prompt):
     imagine_endpoint = "https://api.midjourneyapi.xyz/mj/v2/imagine"
+    fetch_endpoint = "https://api.midjourneyapi.xyz/mj/v2/fetch"
 
     headers = {"X-API-KEY": os.getenv("GO_API_KEY")}
     data = {
@@ -29,28 +30,39 @@ def midjourney_imagine(prompt):
         "webhook_secret": "",
     }
     response = requests.post(imagine_endpoint, json=data, headers=headers)
-    print(response.content)
-
     if not response.ok:
         raise Exception(f"Failed to send prompt. Status: {response.status_code}")
 
-    return response.json()
+    json_response = response.json()
+    task_id = None
+    if json_response.get("success"):
+        task_id = json_response["task_id"]
+    else:
+        raise Exception(f"Invalid prompt")
 
+    retry_delay = 1
+    retry_backoff = 2
+    max_retries = 10
+    for _ in range(max_retries):
+        data = {"task_id": task_id}
+        response = requests.post(fetch_endpoint, json=data)
 
-def dalle2_imagine(prompt):
-    dalle2_endpoint = "https://api.openai.com/v1/images/generations"
+        if response.status_code != 200:
+            raise Exception(
+                f"Failed to fetch Goapi taskid. Status: {response.status_code}"
+            )
 
-    headers = {
-        "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
-        "Content-Type": "application/json",
-    }
-    data = {"prompt": prompt, "model": "dall-e-3", "n": 1, "size": "1024x1024"}
-    response = requests.post(dalle2_endpoint, json=data, headers=headers)
+        status = response.json()["status"]
+        if status == "finished":
+            return response.json()
+        elif status == "failed":
+            raise Exception(f"Goapi fetch with taskid returns failed")
+        else:
+            print("Status is {}, retrying in {} seconds...".format(status, retry_delay))
+            time.sleep(retry_delay)
+            retry_delay *= retry_backoff
 
-    if not response.ok:
-        raise Exception(f"Failed to send prompt. Status: {response.status_code}")
-
-    return response.json()
+        raise Exception("Request timed out after {} retries".format(max_retries))
 
 
 def send_prompt_to_claude(prompt, claude_model, api_key):
