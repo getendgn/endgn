@@ -49,7 +49,7 @@ def midjourney_refresh(task_id):
     response = requests.post(fetch_endpoint, json=data)
 
     retry_delay = 1
-    retry_backoff = 20
+    retry_backoff = 4
     max_retries = 10
 
     for _ in range(max_retries):
@@ -63,6 +63,7 @@ def midjourney_refresh(task_id):
         elif status == "failed":
             raise Exception(f"Goapi fetch with taskid returns failed")
         else:
+            print(response.json())
             print("Status is {}, retrying in {} seconds...".format(status, retry_delay))
             time.sleep(retry_delay)
             retry_delay *= retry_backoff
