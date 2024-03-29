@@ -19,7 +19,6 @@ def download_tmp_video(url, file_name):
 
 def midjourney_imagine(prompt):
     imagine_endpoint = "https://api.midjourneyapi.xyz/mj/v2/imagine"
-    fetch_endpoint = "https://api.midjourneyapi.xyz/mj/v2/fetch"
 
     headers = {"X-API-KEY": os.getenv("GO_API_KEY")}
     data = {
@@ -40,18 +39,24 @@ def midjourney_imagine(prompt):
     else:
         raise Exception(f"Invalid prompt")
 
+    data = midjourney_refresh(task_id)
+    print(data)
+
+
+def midjourney_refresh(task_id):
+    data = {"task_id": task_id}
+    fetch_endpoint = "https://api.midjourneyapi.xyz/mj/v2/fetch"
+    response = requests.post(fetch_endpoint, json=data)
+
     retry_delay = 1
     retry_backoff = 2
     max_retries = 10
-    for _ in range(max_retries):
-        data = {"task_id": task_id}
-        response = requests.post(fetch_endpoint, json=data)
 
+    for _ in range(max_retries):
         if response.status_code != 200:
             raise Exception(
                 f"Failed to fetch Goapi taskid. Status: {response.status_code}"
             )
-
         status = response.json()["status"]
         if status == "finished":
             return response.json()

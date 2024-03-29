@@ -342,7 +342,7 @@ def process_video_task(video_url, file_name, customer_name, user_name):
 
     response = midjourney_imagine(mj_prompt)
     image_url = response.get("data")[0].get("url")
-    print("image url:", image_url)
+    # print("image url:", image_url)
 
 
 @app.route("/process-video", methods=["POST"])
