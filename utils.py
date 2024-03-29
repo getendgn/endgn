@@ -30,12 +30,14 @@ def midjourney_imagine(prompt):
         "webhook_secret": "",
     }
     response = requests.post(imagine_endpoint, json=data, headers=headers)
+    print(response.content)
 
     if not response.ok:
         raise Exception(f"Failed to send prompt. Status: {response.status_code}")
 
     task_id = response.json()["task_id"]
     response = requests.post(fetch_endpoint, json={"task_id": task_id}, headers=headers)
+    print(response.content)
 
     if not response.ok:
         raise Exception(f"Failed to send prompt. Status: {response.status_code}")
