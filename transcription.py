@@ -45,6 +45,8 @@ def transcribe_video(video_path):
             language="en",
             response_format="text",
         )
-        transcription += transcription.text
+        if transcription:
+            print(transcription)
+            transcription += transcription.text
 
     return full_transcription
