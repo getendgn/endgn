@@ -19,7 +19,6 @@ def download_tmp_video(url, file_name):
 
 def midjourney_imagine(prompt):
     imagine_endpoint = "https://api.midjourneyapi.xyz/mj/v2/imagine"
-    fetch_endpoint = "https://api.midjourneyapi.xyz/mj/v2/fetch"
 
     headers = {"X-API-KEY": os.getenv("GO_API_KEY")}
     data = {
@@ -35,14 +34,23 @@ def midjourney_imagine(prompt):
     if not response.ok:
         raise Exception(f"Failed to send prompt. Status: {response.status_code}")
 
-    task_id = response.json()["task_id"]
-    response = requests.post(fetch_endpoint, json={"task_id": task_id}, headers=headers)
-    print(response.content)
+    return response.json()
+
+
+def dalle2_imagine(prompt):
+    dalle2_endpoint = "https://api.openai.com/v1/images/generations"
+
+    headers = {
+        "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
+        "Content-Type": "application/json",
+    }
+    data = {"prompt": prompt, "model": "dall-e-2", "n": 1, "size": "1024x1024"}
+    response = requests.post(dalle2_endpoint, json=data, headers=headers)
 
     if not response.ok:
         raise Exception(f"Failed to send prompt. Status: {response.status_code}")
 
-    return response.json()["task_result"]["image_url"]
+    return response.json()
 
 
 def send_prompt_to_claude(prompt, claude_model, api_key):
