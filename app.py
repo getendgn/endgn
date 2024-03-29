@@ -343,17 +343,20 @@ def process_video_task(video_url, file_name, customer_name, user_name):
     os.unlink(video_path)
     # update video table with transcription
 
-    prompt = f"""Generate a YouTube title, description and a very short engaging hook for thumbnail using the provided transcription, Speak from first-person perspective:
-    "{transcript}"
+    prompt = f"""Generate a YouTube title, description and a very short engaging hook for thumbnail using the provided transcription in the following format:
+    "[TITLE]
+    [DESCRIPTION]
+    [ENGAGING HOOK]"
+    Transcript: "{transcript}"
+
+    You should Speak from first-person perspective and Your response should only include the title, description and hook in the format provided, without any additional information.
     """
 
     response = send_prompt_to_claude(prompt, CLAUDE_MODEL, ANTHROPIC_API_KEY)
-    title = re.search(r"Title:\n(.*?)\n", response).group(1)
-    description = re.search(r"Description:\n(.*?)\n", response).group(1)
-    hook = re.search(r"Engaging Hook for Thumbnail:\n(.*?)\n", response).group(1)
-    # update airtable
+    title, description, hook = [text.strip() for text in response.split("\n")]
 
-    prompt = f"Write a very detailed prompt for Midjourney to generate 16:9 aspect ratio thumbnail images for youtube video with title {title}, Your response should only include the prompt, without any additional information."
+    # update airtable
+    prompt = f"Write a very detailed prompt for Midjourney to generate 16:9 aspect ratio thumbnail images for youtube video with title {title} and description {description}, Your response should only include the prompt, without any additional information."
     mj_prompt = send_prompt_to_claude(prompt, CLAUDE_MODEL, ANTHROPIC_API_KEY)
 
     response = midjourney_imagine(mj_prompt)
