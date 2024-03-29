@@ -60,15 +60,11 @@ def create_folder(service, folder_name, parent_id):
     return folder_id
 
 
-def upload_video_to_drive(url, file_name, path):
+def upload_video_to_drive(file_name, video_path, upload_to_path):
     service = get_service()
-    response = requests.get(url)
-
-    if not response.ok:
-        raise Exception("Failed to download video from video_url")
 
     parent_folder_id = GDRIVE_ROOT_FOLDER_ID
-    for folder_name in path.split("/"):
+    for folder_name in upload_to_path.split("/"):
         folder_id = create_folder(service, folder_name, parent_folder_id)
         parent_folder_id = folder_id
 
@@ -76,14 +72,7 @@ def upload_video_to_drive(url, file_name, path):
         service, datetime.now().strftime("%Y_%m_%d"), parent_folder_id
     )
 
-    Path("tmp").mkdir(parents=True, exist_ok=True)
-    file_path = os.path.join("tmp", file_name)
-
-    with open(file_path, "wb") as f:
-        f.write(response.content)
-
-    media = MediaFileUpload(file_path, resumable=True)
-
+    media = MediaFileUpload(video_path, resumable=True)
     file_metadata = {"name": file_name, "parents": [parent_folder_id]}
     file = (
         service.files()
