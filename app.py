@@ -341,8 +341,8 @@ def process_video_task(video_url, file_name, customer_name, user_name):
     mj_prompt = send_prompt_to_claude(prompt, CLAUDE_MODEL, ANTHROPIC_API_KEY)
 
     response = midjourney_imagine(mj_prompt)
-    image_url = response.get("data")[0].get("url")
-    # print("image url:", image_url)
+    image_url = response.get("task_result").get("image_url")
+    print("image url:", image_url)
 
 
 @app.route("/process-video", methods=["POST"])

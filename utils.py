@@ -49,7 +49,7 @@ def midjourney_refresh(task_id):
     response = requests.post(fetch_endpoint, json=data)
 
     retry_delay = 1
-    retry_backoff = 2
+    retry_backoff = 20
     max_retries = 10
 
     for _ in range(max_retries):
