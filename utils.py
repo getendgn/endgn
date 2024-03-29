@@ -62,7 +62,7 @@ def midjourney_imagine(prompt):
             time.sleep(retry_delay)
             retry_delay *= retry_backoff
 
-        raise Exception("Request timed out after {} retries".format(max_retries))
+    raise Exception("Request timed out after {} retries".format(max_retries))
 
 
 def send_prompt_to_claude(prompt, claude_model, api_key):
