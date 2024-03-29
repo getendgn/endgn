@@ -11,7 +11,7 @@ from metricool import (
 )
 from gdrive import upload_video_to_drive
 from transcription import transcribe_video
-from utils import download_tmp_video, midjourney_imagine
+from utils import download_tmp_video, midjourney_imagine, send_prompt_to_claude
 
 
 # Initialize flask app
@@ -76,30 +76,6 @@ def get_user_record(user_id):
     base = Base(api, AIRTABLE_BASE_ID)
     table = Table(None, base, "Users")
     return table.first(formula=f"{{UserID}} = '{user_id}'")
-
-
-def send_prompt_to_claude(prompt, claude_model, api_key):
-    headers = {
-        "Content-Type": "application/json",
-        "x-api-key": api_key,
-        "anthropic-version": "2023-06-01",
-    }
-    data_payload = {
-        "model": claude_model,
-        "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": 4096,
-        "temperature": 0.7,
-    }
-    response = requests.post(
-        "https://api.anthropic.com/v1/messages", json=data_payload, headers=headers
-    )
-    if response.status_code == 200:
-        return response.json()["content"][0]["text"].strip()
-    else:
-        app.logger.error(
-            f"Failed to send prompt to Claude. Status code: {response.status_code}"
-        )
-        raise Exception("Failed to send prompt to Claude.")
 
 
 def update_response_table(platform_name, submission_id, response, user_id):
