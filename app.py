@@ -338,7 +338,7 @@ def process_video_task(video_url, file_name, customer_name, user_name):
     hook = json_response.get("hook")
 
     # update airtable
-    prompt = f"Write a very detailed prompt for DALLE 2 to generate 16:9 aspect ratio thumbnail images for youtube video with title {title} and description {description}, Your response should only include the prompt, without any additional information. Must not exceed 1000 characters"
+    prompt = f"Write a very detailed prompt for DALLE 3 to generate 16:9 aspect ratio thumbnail images for youtube video with title {title} and description {description}, Your response should only include the prompt, without any additional information."
     dalle_prompt = send_prompt_to_claude(prompt, CLAUDE_MODEL, ANTHROPIC_API_KEY)
 
     response = dalle2_imagine(dalle_prompt)

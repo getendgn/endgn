@@ -44,7 +44,7 @@ def dalle2_imagine(prompt):
         "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
         "Content-Type": "application/json",
     }
-    data = {"prompt": prompt, "model": "dall-e-2", "n": 1, "size": "1024x1024"}
+    data = {"prompt": prompt, "model": "dall-e-3", "n": 1, "size": "1024x1024"}
     response = requests.post(dalle2_endpoint, json=data, headers=headers)
 
     if not response.ok:
