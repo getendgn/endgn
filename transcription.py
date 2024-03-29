@@ -40,8 +40,11 @@ def transcribe_video(video_path):
     for i, chunk_path in enumerate(chunk_paths):
         audio_file = open(chunk_path, "rb")
         transcription = client.audio.transcriptions.create(
-            model="whisper-1", file=audio_file, language="en"
+            model="whisper-1",
+            file=audio_file,
+            language="en",
+            response_format="text",
         )
-        transcription += str(transcription.text)
+        transcription += transcription.text
 
     return full_transcription
