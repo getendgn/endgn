@@ -11,6 +11,7 @@ from metricool import (
 )
 from gdrive import upload_video_to_drive
 from transcription import transcribe_video
+from utils import download_tmp_video, midjourney_imagine
 
 
 # Initialize flask app
@@ -261,24 +262,6 @@ def decrypt_key(encrypted_key):
     return cipher_suite.decrypt(encrypted_key.encode()).decode()
 
 
-def midjourney_imagine(prompt):
-    endpoint = "https://api.midjourneyapi.xyz/mj/v2/imagine"
-    headers = {"X-API-KEY": os.getenv("GO_API_KEY")}
-    data = {
-        "prompt": prompt,
-        "aspect_ratio": "16:9",
-        "process_mode": "fast",
-        "webhook_endpoint": "",
-        "webhook_secret": "",
-    }
-    response = requests.post(endpoint, json=data, headers=headers)
-
-    if response.ok:
-        return response.json()
-
-    raise Exception(f"Failed to send prompt. Status: {response.status_code}")
-
-
 @app.route("/schedule-post", methods=["POST"])
 def schedule_post():
     data = request.get_json()
@@ -350,14 +333,14 @@ def post_to_list():
     rate_limit="7/m",
 )
 def process_video_task(video_url, file_name, customer_name, user_name):
-    path = f"{customer_name}/{user_name}"
-    upload_video_to_drive(video_url, file_name, path)
+    video_path = download_tmp_video(video_url, file_name)
+    gdrive_path = f"{customer_name}/{user_name}"
+    upload_video_to_drive(file_name, video_path, gdrive_path)
     # remove video from airtable
     # update video table with drive link
 
-    file_path = os.path.join(customer_name, user_name, file_name)
-    transcript = transcribe_video(file_path)
-    os.unlink(file_path)
+    transcript = transcribe_video(video_path)
+    os.unlink(video_path)
     # update video table with transcription
 
     prompt = f"""Generate a YouTube title, description and a very short engaging hook for thumbnail using the provided transcription, Speak from first-person perspective:
