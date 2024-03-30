@@ -46,13 +46,13 @@ def midjourney_imagine(prompt):
 def midjourney_refresh(task_id):
     data = {"task_id": task_id}
     fetch_endpoint = "https://api.midjourneyapi.xyz/mj/v2/fetch"
-    response = requests.post(fetch_endpoint, json=data)
 
     retry_delay = 1
     retry_backoff = 4
     max_retries = 10
 
     for _ in range(max_retries):
+        response = requests.post(fetch_endpoint, json=data)
         if response.status_code != 200:
             raise Exception(
                 f"Failed to fetch Goapi taskid. Status: {response.status_code}"
