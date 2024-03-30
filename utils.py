@@ -186,8 +186,8 @@ def edit_hook_to_image(text, img_path):
 
 def upload_image(img_path):
     cloudinary.config(
-        cloud_name="tgxplore",
-        api_key="467249774244945",
-        api_secret="frVBFIKZvyzPRIufJxC02SmWFkQ",
+        cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+        api_key=os.getenv("CLOUDINARY_API_KEY"),
+        api_secret=os.getenv("CLOUDINARY_API_KEY"),
     )
     return cloudinary.uploader.upload(img_path)

@@ -373,6 +373,10 @@ def process_video_task(record_id, video_url, file_name, customer_name, user_name
     update_airtable_table("Videos", record_id, update_data)
     logger.info("Updated 'Videos' table with Thumbnail image")
 
+    update_data = {"Status": "Ready for Review"}
+    update_airtable_table("Videos", record_id, update_data)
+    logger.info("Completed processing video")
+
 
 @app.route("/process-video", methods=["POST"])
 def process_video():
