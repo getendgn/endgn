@@ -40,7 +40,8 @@ def midjourney_imagine(prompt):
         raise Exception(f"Invalid prompt")
 
     data = midjourney_refresh(task_id)
-    print(data)
+    image_url = data["task_result"].get("image_url")
+    print("Image url:", image_url)
 
 
 def midjourney_refresh(task_id):
@@ -63,7 +64,6 @@ def midjourney_refresh(task_id):
         elif status == "failed":
             raise Exception(f"Goapi fetch with taskid returns failed")
         else:
-            print(response.json())
             print("Status is {}, retrying in {} seconds...".format(status, retry_delay))
             time.sleep(retry_delay)
             retry_delay *= retry_backoff
