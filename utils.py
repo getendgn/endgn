@@ -40,8 +40,10 @@ def midjourney_imagine(prompt):
         raise Exception(f"Invalid prompt")
 
     data = midjourney_refresh(task_id)
-    image_url = data["task_result"].get("image_url")
-    print("Image url:", image_url)
+    upscale_task_id = midjourney_upscale(task_id)
+
+    data = midjourney_refresh(upscale_task_id)
+    print(data)
 
 
 def midjourney_refresh(task_id):
@@ -69,6 +71,30 @@ def midjourney_refresh(task_id):
             retry_delay *= retry_backoff
 
     raise Exception("Request timed out after {} retries".format(max_retries))
+
+
+def midjourney_upscale(task_id):
+    upscale_endpoint = "https://api.midjourneyapi.xyz/mj/v2/upscale"
+
+    headers = {"X-API-KEY": os.getenv("GO_API_KEY")}
+    data = {
+        "origin_task_id": task_id,
+        "index": "1",
+        "webhook_endpoint": "",
+        "webhook_secret": "",
+    }
+
+    response = requests.post(upscale_endpoint, json=data, headers=headers)
+    if not response.ok:
+        raise Exception(f"Failed to send prompt. Status: {response.status_code}")
+
+    json_response = response.json()
+    task_id = None
+    if json_response.get("success"):
+        task_id = json_response["task_id"]
+        return task_id
+    else:
+        raise Exception(f"Failed to upscale")
 
 
 def send_prompt_to_claude(prompt, claude_model, api_key):
