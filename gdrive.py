@@ -1,10 +1,8 @@
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
 from datetime import datetime
-from pathlib import Path
-import os, requests
+import os
 import logging
 
 logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
