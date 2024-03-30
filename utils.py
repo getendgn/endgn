@@ -117,7 +117,7 @@ def midjourney_upscale(task_id):
         raise Exception(f"Failed to upscale")
 
 
-def send_prompt_to_claude(prompt, claude_model, api_key):
+def send_prompt_to_claude(prompt, claude_model, api_key, retry_count=5):
     headers = {
         "Content-Type": "application/json",
         "x-api-key": api_key,
@@ -132,9 +132,14 @@ def send_prompt_to_claude(prompt, claude_model, api_key):
     response = requests.post(
         "https://api.anthropic.com/v1/messages", json=data_payload, headers=headers
     )
+
     if response.status_code == 200:
         return response.json()["content"][0]["text"].strip()
-    else:
+    elif response.status_code in (429, 418) or response.status_code >= 500:
+        if retry_count > 0:
+            wait_time = (2 ** (5 - retry_count)) * 0.5
+            time.sleep(wait_time)
+            return send_prompt_to_claude(prompt, claude_model, api_key, retry_count - 1)
         raise Exception(
             f"Failed to send prompt to Claude. Status: {response.status_code}"
         )
