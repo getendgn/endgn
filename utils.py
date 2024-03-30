@@ -1,5 +1,24 @@
-import requests, os, time
+import requests, os, time, textwrap
 from pathlib import Path
+from PIL import Image, ImageFont, ImageDraw
+from logger import logger
+import cloudinary.uploader
+import cloudinary
+
+
+def download_tmp_image(url, filename):
+    response = requests.get(url)
+
+    if not response.ok:
+        raise Exception("Failed to download image from image_url")
+
+    Path("tmp").mkdir(parents=True, exist_ok=True)
+    file_path = os.path.join("tmp", f"{filename}.png")
+
+    with open(file_path, "wb") as f:
+        f.write(response.content)
+
+    return file_path
 
 
 def download_tmp_video(url, file_name):
@@ -41,9 +60,9 @@ def midjourney_imagine(prompt):
 
     data = midjourney_refresh(task_id)
     upscale_task_id = midjourney_upscale(task_id)
-
     data = midjourney_refresh(upscale_task_id)
-    print(data)
+
+    return data["task_result"].get("image_url")
 
 
 def midjourney_refresh(task_id):
@@ -62,12 +81,12 @@ def midjourney_refresh(task_id):
             )
         status = response.json()["status"]
         if status == "finished":
-            print("finished")
+            logger.info("Midjourney refresh completed")
             return response.json()
         elif status == "failed":
             raise Exception(f"Goapi fetch with taskid returns failed")
         else:
-            print("Status is {}, retrying in {} seconds...".format(status, retry_delay))
+            logger.info(f"Status is {status}, retrying in {retry_delay} seconds...")
             time.sleep(retry_delay + 20)
             retry_delay *= retry_backoff
 
@@ -119,3 +138,51 @@ def send_prompt_to_claude(prompt, claude_model, api_key):
         raise Exception(
             f"Failed to send prompt to Claude. Status: {response.status_code}"
         )
+
+
+def edit_hook_to_image(text, img_path):
+    img = Image.open(img_path)
+    wrapped_text = textwrap.wrap(text, width=40)
+    font_size = 1
+    img_fraction = 1.6
+    draw = ImageDraw.Draw(img)
+    font = ImageFont.truetype("DejaVuSans-Bold.ttf", font_size)
+    breakpoint = img_fraction * img.size[0]
+    jumpsize = 75
+
+    while True:
+        if font.getlength(text=text) < breakpoint:
+            font_size += jumpsize
+        else:
+            jumpsize = jumpsize // 2
+            font_size -= jumpsize
+        font = ImageFont.truetype("DejaVuSans-Bold.ttf", font_size)
+        if jumpsize <= 1:
+            break
+
+    total_height = sum(
+        (font.getbbox(line)[-1] - font.getbbox(line)[1]) for line in wrapped_text
+    )
+    y_offset = img.size[1] - total_height - 80
+
+    for line in wrapped_text:
+        left, top, right, bottom = font.getbbox(line)
+        width = right - left
+        height = bottom - top
+        x_offset = (img.size[0] - width) // 2
+        bbox = draw.textbbox((x_offset, y_offset), text=line, font=font)
+        draw.rectangle(bbox, fill=(0, 0, 0, int(255 * 0.1)))
+        draw.text((x_offset, y_offset), line, (255, 255, 255), font=font)
+        y_offset += height + 16
+
+    img.save(img_path)
+    logger.info("Edited hook to Image")
+
+
+def upload_image(img_path):
+    cloudinary.config(
+        cloud_name="tgxplore",
+        api_key="467249774244945",
+        api_secret="frVBFIKZvyzPRIufJxC02SmWFkQ",
+    )
+    return cloudinary.uploader.upload(img_path)
