@@ -382,7 +382,7 @@ def process_video():
     customer_name = data.get("customer_name")
     user_name = data.get("user_name")
     record_id = data.get("record_id")
-    print(record_id)
+    print("record id:", record_id)
 
     process_video_task.apply_async(
         args=(record_id, video_url, video_filename, customer_name, user_name)
