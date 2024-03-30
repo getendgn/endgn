@@ -1,16 +1,21 @@
 from pydub import AudioSegment
 from pydub.silence import split_on_silence
 from openai import OpenAI
+from logger import logger
 import os, random, string
 
 
 def create_audio_chunks(video_path):
+    logger.info("Starting audio chunking")
     chunks_folder = os.path.join(os.getcwd(), "tmp", "chunks")
     os.makedirs(chunks_folder, exist_ok=True)
+
     audio = AudioSegment.from_file(video_path)
     chunks = split_on_silence(
         audio, min_silence_len=1000, silence_thresh=audio.dBFS - 16, keep_silence=200
     )
+
+    logger.info("Splitting audio into chunks")
 
     target_length = 90 * 1000
     output_chunks = [chunks[0]]
@@ -29,6 +34,8 @@ def create_audio_chunks(video_path):
         path = os.path.join(chunks_folder, f"{title}_{i}.wav")
         chunk.export(path, format="wav")
         chunk_paths.append(path)
+
+    logger.info("Audio chunks created")
     return chunk_paths
 
 
