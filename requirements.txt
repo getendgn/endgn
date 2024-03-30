@@ -9,3 +9,5 @@ google-auth
 google-api-python-client
 pydub
 openai
+pillow
+cloudinary
