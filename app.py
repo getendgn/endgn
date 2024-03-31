@@ -434,10 +434,6 @@ def upload_to_youtube():
     data = request.get_json()
     video_record_id = data.get("record_id")
     user_record_id = data.get("user_record_id")
-    video_title = data.get("video_title")
-    video_description = data.get("video_description")
-    google_drive_url = data.get("storage_link")
-    thumbnail_url = data.get("thumbnail_url")
 
     base = Base(api, AIRTABLE_BASE_ID)
     table = Table(None, base, "Videos")
@@ -445,13 +441,18 @@ def upload_to_youtube():
 
     table = Table(None, base, "Users")
     user_record = table.get(user_record_id)
-    user_youtube_credential = user_record.get("fields").get("Youtube Credential")
+    token_json_str = user_record["fields"].get("Youtube Credential")
+    token_json = json.loads(token_json_str)
 
     credentials = Credentials.from_authorized_user_info(
-        user_youtube_credential,
-        scopes=["https://www.googleapis.com/auth/youtube.upload"],
+        token_json, scopes=["https://www.googleapis.com/auth/youtube.upload"]
     )
     youtube = build("youtube", "v3", credentials=credentials)
+
+    title = video_record["fields"].get("Video Title")
+    description = video_record["fields"].get("Video Description")
+    google_drive_url = video_record["fields"].get("Storage Link")
+    thumbnail_url = video_record["fields"].get("Thumbnail Image")[0].get("url")
 
     file_id = re.search(r"open\?id=([^\&]+)", google_drive_url).group(1)
     video_path = download_file_from_drive(file_id)
@@ -461,8 +462,8 @@ def upload_to_youtube():
         body={
             "snippet": {
                 "categoryId": "22",
-                "description": video_description,
-                "title": video_title,
+                "description": description,
+                "title": title,
                 "defaultLanguage": "en",
                 "defaultAudioLanguage": "en",
                 "thumbnails": {"default": {"url": thumbnail_url}},
