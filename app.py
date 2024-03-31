@@ -406,10 +406,10 @@ def process_video():
 def authorize_youtube():
     user_record_id = request.args.get("user_record_id")
     session["user_record_id"] = user_record_id
-    _, state = flow.authorization_url(prompt="consent")
+    auth_url, state = flow.authorization_url(prompt="consent")
     session["state"] = state
 
-    return redirect("/oauth2callback")
+    return redirect(auth_url)
 
 
 @app.route("/oauth2callback", methods=["GET"])
