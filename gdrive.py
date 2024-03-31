@@ -1,6 +1,6 @@
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload
+from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 from datetime import datetime
 import os
 import logging
@@ -79,3 +79,31 @@ def upload_video_to_drive(file_name, video_path, upload_to_path):
     )
 
     return file.get("id")
+
+
+def download_file_from_drive(file_id):
+    service = get_service()
+
+    file_metadata = None
+    try:
+        file_metadata = service.files().get(fileId=file_id).execute()
+    except:
+        raise Exception("File not found in google drive")
+
+    request = service.files().get_media(fileId=file_id)
+
+    os.makedirs("tmp", exist_ok=True)
+    file_path = os.path.join("tmp", file_metadata["name"])
+    fh = open(file_path, "wb")
+    downloader = MediaIoBaseDownload(fh, request)
+    done = False
+    while done is False:
+        status, done = downloader.next_chunk()
+
+    return file_path
+
+
+def delete_file_from_drive(file_id):
+    service = get_service()
+    service.files().delete(fileId=file_id).execute()
+    return

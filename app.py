@@ -1,5 +1,5 @@
 import os, re, json
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, url_for, session, redirect
 from pyairtable import Api, Table, Base
 from celery import Celery
 from cryptography.fernet import Fernet
@@ -9,7 +9,11 @@ from metricool import (
     create_metricool_list_post,
     update_metricool_list_post,
 )
-from gdrive import upload_video_to_drive
+from gdrive import (
+    upload_video_to_drive,
+    download_file_from_drive,
+    delete_file_from_drive,
+)
 from transcription import transcribe_video
 from utils import (
     download_tmp_video,
@@ -20,7 +24,10 @@ from utils import (
     upload_image,
 )
 from logger import logger
-
+from youtube import flow
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
 
 # Initialize flask app
 app = Flask(__name__)
@@ -41,6 +48,7 @@ app.config["CELERY_BROKER_URL"] = (
 app.config["result_backend"] = (
     os.getenv("CELERY_RESULT_BACKEND", REDIS_URL) or "redis://localhost:6379/"
 )
+app.secret_key = "SECRETKEY"
 
 # Initialize Celery
 celery = Celery(app.name, broker=app.config["CELERY_BROKER_URL"])
@@ -327,6 +335,7 @@ def process_video_task(record_id, video_url, file_name, customer_name, user_name
     video_path = download_tmp_video(video_url, file_name)
     gdrive_path = f"{customer_name}/{user_name}"
     file_id = upload_video_to_drive(file_name, video_path, gdrive_path)
+    os.unlink(video_path)
 
     update_data = {
         "Video File": None,
@@ -391,6 +400,80 @@ def process_video():
         args=(record_id, video_url, video_filename, customer_name, user_name)
     )
     return jsonify({"message": "Video processing task queued."})
+
+
+@app.route("/authorize-youtube")
+def authorize_youtube():
+    data = request.get_json()
+    session["user_record_id"] = data.get("user_record_id")
+    authorization_url, state = flow.authorization_url(promp="consent")
+    session["state"] = state
+
+    return redirect(authorization_url)
+
+
+@app.route("/oauth2callback")
+def oauth2callback():
+    state = session.pop("state", None)
+    user_record_id = session.pop("user_record_id", None)
+
+    if state is None or state != request.args.get("state"):
+        return "Invalid state parameter", 400
+
+    flow.fetch_token(authorization_response=request.url)
+    credentials = flow.credentials
+
+    update_data = {"Youtube Credential": credentials.to_json()}
+    update_airtable_table("Users", user_record_id, update_data)
+
+    return "Authorization successful!"
+
+
+@app.route("/upload-to-youtube", methods=["POST"])
+def upload_to_youtube():
+    data = request.get_json()
+    video_record_id = data.get("record_id")
+    user_record_id = data.get("user_record_id")
+    video_title = data.get("video_title")
+    video_description = data.get("video_description")
+    google_drive_url = data.get("storage_link")
+    thumbnail_url = data.get("thumbnail_url")
+
+    base = Base(api, AIRTABLE_BASE_ID)
+    table = Table(None, base, "Videos")
+    video_record = table.get(video_record_id)
+
+    table = Table(None, base, "Users")
+    user_record = table.get(user_record_id)
+    user_youtube_credential = user_record.get("fields").get("Youtube Credential")
+
+    credentials = Credentials.from_authorized_user_info(
+        user_youtube_credential,
+        scopes=["https://www.googleapis.com/auth/youtube.upload"],
+    )
+    youtube = build("youtube", "v3", credentials=credentials)
+
+    file_id = re.search(r"open\?id=([^\&]+)", google_drive_url).group(1)
+    video_path = download_file_from_drive(file_id)
+
+    request = youtube.videos().insert(
+        part="snippet,status",
+        body={
+            "snippet": {
+                "categoryId": "22",
+                "description": video_description,
+                "title": video_title,
+                "defaultLanguage": "en",
+                "defaultAudioLanguage": "en",
+                "thumbnails": {"default": {"url": thumbnail_url}},
+            },
+            "status": {"privacyStatus": "private"},
+        },
+        media_body=MediaFileUpload(video_path),
+    )
+
+    response = request.execute()
+    return "Video uploaded successfully!"
 
 
 if __name__ == "__main__":
