@@ -335,7 +335,6 @@ def process_video_task(record_id, video_url, file_name, customer_name, user_name
     video_path = download_tmp_video(video_url, file_name)
     gdrive_path = f"{customer_name}/{user_name}"
     file_id = upload_video_to_drive(file_name, video_path, gdrive_path)
-    os.unlink(video_path)
 
     update_data = {
         "Video File": None,
@@ -348,6 +347,7 @@ def process_video_task(record_id, video_url, file_name, customer_name, user_name
     update_data = {"Transcription": transcription}
     update_airtable_table("Videos", record_id, update_data)
     logger.info(f"Transcribed video and saved to Airtable")
+    os.unlink(video_path)
 
     prompt = f"""Generate a YouTube title, description and a very short engaging hook for thumbnail using the provided transcription in JSON format:
     Transcript: "{transcription}"
