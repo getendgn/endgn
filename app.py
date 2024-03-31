@@ -407,9 +407,10 @@ def authorize_youtube():
     user_record_id = request.args.get("user_record_id")
     session["user_record_id"] = user_record_id
     authorization_url, state = flow.authorization_url(promp="consent")
+    logger.info(authorization_url)
     session["state"] = state
 
-    return redirect(authorization_url)
+    return redirect("/oauth2callback")
 
 
 @app.route("/oauth2callback", methods=["GET"])
