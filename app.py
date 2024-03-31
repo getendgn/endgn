@@ -436,8 +436,6 @@ def upload_to_youtube():
     user_record_id = data.get("user_record_id")
 
     base = Base(api, AIRTABLE_BASE_ID)
-    table = Table(None, base, "Videos")
-    video_record = table.get(video_record_id)
 
     table = Table(None, base, "Users")
     user_record = table.get(user_record_id)
@@ -449,6 +447,8 @@ def upload_to_youtube():
     )
     youtube = build("youtube", "v3", credentials=credentials)
 
+    table = Table(None, base, "Videos")
+    video_record = table.get(video_record_id)
     title = video_record["fields"].get("Video Title")
     description = video_record["fields"].get("Video Description")
     google_drive_url = video_record["fields"].get("Storage Link")
@@ -476,7 +476,7 @@ def upload_to_youtube():
         )
         .execute()
     )
-    logger.info(f"Uploaded video to youtube: {response}")
+    logger.info(f"Uploaded video to youtube")
     return "Video uploaded successfully!"
 
 
