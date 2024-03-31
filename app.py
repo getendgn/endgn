@@ -404,7 +404,7 @@ def process_video():
 
 @app.route("/authorize-youtube", methods=["GET"])
 def authorize_youtube():
-    user_record_id = request.query_string.get("user_record_id")
+    user_record_id = request.args.get("user_record_id")
     session["user_record_id"] = user_record_id
     authorization_url, state = flow.authorization_url(promp="consent")
     session["state"] = state
