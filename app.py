@@ -402,7 +402,7 @@ def process_video():
     return jsonify({"message": "Video processing task queued."})
 
 
-@app.route("/authorize-youtube")
+@app.route("/authorize-youtube", methods=["POST"])
 def authorize_youtube():
     data = request.get_json()
     session["user_record_id"] = data.get("user_record_id")
@@ -412,7 +412,7 @@ def authorize_youtube():
     return redirect(authorization_url)
 
 
-@app.route("/oauth2callback")
+@app.route("/oauth2callback", methods=["GET"])
 def oauth2callback():
     state = session.pop("state", None)
     user_record_id = session.pop("user_record_id", None)
