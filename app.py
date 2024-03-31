@@ -432,7 +432,7 @@ def oauth2callback():
 @app.route("/upload-to-youtube", methods=["POST"])
 def upload_to_youtube():
     data = request.get_json()
-    video_record_id = data.get("record_id")
+    video_record_id = data.get("video_record_id")
     user_record_id = data.get("user_record_id")
 
     base = Base(api, AIRTABLE_BASE_ID)
