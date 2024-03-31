@@ -457,23 +457,26 @@ def upload_to_youtube():
     file_id = re.search(r"open\?id=([^\&]+)", google_drive_url).group(1)
     video_path = download_file_from_drive(file_id)
 
-    request = youtube.videos().insert(
-        part="snippet,status",
-        body={
-            "snippet": {
-                "categoryId": "22",
-                "description": description,
-                "title": title,
-                "defaultLanguage": "en",
-                "defaultAudioLanguage": "en",
-                "thumbnails": {"default": {"url": thumbnail_url}},
+    response = (
+        youtube.videos()
+        .insert(
+            part="snippet,status",
+            body={
+                "snippet": {
+                    "categoryId": "22",
+                    "description": description,
+                    "title": title,
+                    "defaultLanguage": "en",
+                    "defaultAudioLanguage": "en",
+                    "thumbnails": {"default": {"url": thumbnail_url}},
+                },
+                "status": {"privacyStatus": "private"},
             },
-            "status": {"privacyStatus": "private"},
-        },
-        media_body=MediaFileUpload(video_path),
+            media_body=MediaFileUpload(video_path),
+        )
+        .execute()
     )
-
-    response = request.execute()
+    logger.info(f"Uploaded video to youtube: {response}")
     return "Video uploaded successfully!"
 
 
