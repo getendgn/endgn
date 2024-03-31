@@ -406,9 +406,9 @@ def process_video():
 def authorize_youtube():
     user_record_id = request.args.get("user_record_id")
     session["user_record_id"] = user_record_id
-    authorization_url, state = flow.authorization_url(promp="consent")
-    logger.info(authorization_url)
+    _, state = flow.authorization_url(promp="consent")
     session["state"] = state
+    logger.info("state", state)
 
     return redirect("/oauth2callback")
 
@@ -416,6 +416,7 @@ def authorize_youtube():
 @app.route("/oauth2callback", methods=["GET"])
 def oauth2callback():
     state = session.pop("state", None)
+    logger.info("state /oauth2callback", state)
     user_record_id = session.pop("user_record_id", None)
 
     if state is None or state != request.args.get("state"):
