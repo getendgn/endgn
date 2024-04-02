@@ -76,17 +76,19 @@ def get_submission_by_id(submission_id):
 
 def get_platform_strategy(platform_name, user_id):
     record = get_user_record(user_id)
-    platform_name.replace("LinkedIn Articles", "LinkedIn").replace("Blogs", "Blog")
+    platform_name = platform_name.replace("LinkedIn Articles", "LinkedIn").replace(
+        "Blogs", "Blog"
+    )
     field_name = f"{platform_name} Strategy"
-    logger.info(f"Strategy field name: {field_name}")
     return record["fields"].get(field_name)
 
 
 def get_platform_prompt(platform_name, user_id):
     record = get_user_record(user_id)
-    platform_name.replace("LinkedIn Articles", "LinkedIn").replace("Blogs", "Blog")
+    platform_name = platform_name.replace("LinkedIn Articles", "LinkedIn").replace(
+        "Blogs", "Blog"
+    )
     field_name = f"{platform_name} Prompt"
-    logger.info(f"Prompt field name: {field_name}")
     return record["fields"].get(field_name)
 
 
@@ -120,10 +122,6 @@ def generate_content_for_platform(platform, submission_id):
 
     strategy_text = get_platform_strategy(platform, user_id)
     prompt_template = get_platform_prompt(platform, user_id)
-
-    logger.info("Generating content for ", platform)
-    logger.info(f"Strategy text: {strategy_text}")
-    logger.info(f"Prompt template: {prompt_template}")
 
     if not prompt_template or not strategy_text:
         return f"No prompt or strategy found for {platform}"
