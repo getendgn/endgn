@@ -378,7 +378,6 @@ def process_video_task(record_id, video_url, file_name, customer_name, user_name
 
     img_url = midjourney_imagine(mj_prompt)
     img_path = download_tmp_image(img_url, hook[:10])
-    logger.info(f"image url: {img_url}")
     edit_hook_to_image(hook, img_path)
     edited_img_url = upload_image(img_path).get("secure_url")
 
@@ -474,7 +473,7 @@ def upload_to_youtube():
                     "defaultAudioLanguage": "en",
                     "thumbnails": {"default": {"url": thumbnail_url}},
                 },
-                "status": {"privacyStatus": "private"},
+                "status": {"privacyStatus": "public"},
             },
             media_body=MediaFileUpload(video_path),
         )
