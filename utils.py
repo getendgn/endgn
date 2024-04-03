@@ -145,6 +145,8 @@ def send_prompt_to_claude(prompt, claude_model, api_key, retry_count=5):
         raise Exception(
             f"Failed to send prompt to Claude. Status: {response.status_code}"
         )
+    else:
+        raise Exception(f"Failed to send prompt to Claude. Status: {response.content}")
 
 
 def edit_hook_to_image(text, img_path):
