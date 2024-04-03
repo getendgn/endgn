@@ -133,6 +133,7 @@ def send_prompt_to_claude(prompt, claude_model, api_key, retry_count=5):
         "https://api.anthropic.com/v1/messages", json=data_payload, headers=headers
     )
 
+    logger.info(f"Claude response status: {response.status_code}")
     if response.status_code == 200:
         logger.info(response.json()["content"][0]["text"])
         return response.json()["content"][0]["text"].strip()
