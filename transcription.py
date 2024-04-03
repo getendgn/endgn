@@ -16,7 +16,7 @@ def create_audio_chunks(video_path):
     title = "".join(
         [random.choice(string.ascii_letters + string.digits) for n in range(4)]
     )
-    for i, chunk in enumerate(len(audio) // duration):
+    for i in range(len(audio) // duration):
         start_time = i * duration
         end_time = (i + 1) * duration
 
@@ -24,30 +24,6 @@ def create_audio_chunks(video_path):
         segment = audio[start_time:end_time]
         segment.export(path, format="wav")
         chunk_paths.append(path)
-
-    # chunks = split_on_silence(
-    #     audio, min_silence_len=1000, silence_thresh=audio.dBFS - 4, keep_silence=200
-    # )
-
-    # logger.info("Splitting audio into chunks")
-
-    # target_length = 90 * 1000
-    # output_chunks = [chunks[0]]
-
-    # for chunk in chunks[1:]:
-    #     if len(output_chunks[-1]) < target_length:
-    #         output_chunks[-1] += chunk
-    #     else:
-    #         output_chunks.append(chunk)
-
-    # chunk_paths = []
-    # title = "".join(
-    #     [random.choice(string.ascii_letters + string.digits) for n in range(4)]
-    # )
-    # for i, chunk in enumerate(output_chunks):
-    #     path = os.path.join(chunks_folder, f"{title}_{i}.wav")
-    #     chunk.export(path, format="wav")
-    #     chunk_paths.append(path)
 
     logger.info("Audio chunks created")
     return chunk_paths
@@ -69,4 +45,8 @@ def transcribe_video(video_path):
         if transcription:
             full_transcription += transcription
 
+    for i in chunk_paths:
+        os.unlink(i)
+
+    logger.info("Transcription completed")
     return full_transcription
