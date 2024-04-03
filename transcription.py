@@ -12,7 +12,7 @@ def create_audio_chunks(video_path):
 
     audio = AudioSegment.from_file(video_path)
     chunks = split_on_silence(
-        audio, min_silence_len=1000, silence_thresh=audio.dBFS - 8, keep_silence=200
+        audio, min_silence_len=1000, silence_thresh=audio.dBFS - 4, keep_silence=200
     )
 
     logger.info("Splitting audio into chunks")
