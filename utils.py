@@ -134,6 +134,7 @@ def send_prompt_to_claude(prompt, claude_model, api_key, retry_count=5):
     )
 
     if response.status_code == 200:
+        logger.info(response.json()["content"][0]["text"])
         return response.json()["content"][0]["text"].strip()
     elif response.status_code in (429, 418) or response.status_code >= 500:
         if retry_count > 0:
