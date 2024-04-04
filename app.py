@@ -308,7 +308,8 @@ def post_to_list():
     response = create_metricool_list_post(blog_id, user_id, list_id)
 
     if response.status_code != 200:
-        app.logger.error("Failed to create list post.")
+        app.logger.error("Failed to create list post, Status: %s", response.status_code)
+        app.logger.error("Error: %s", response.content)
         return jsonify({"error": "Failed to create list post."}), 400
 
     create_post = response.json()[-1]
