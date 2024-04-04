@@ -305,6 +305,9 @@ def post_to_list():
     post_text = data.get("text")
     media_urls = data.get("media_urls")
 
+    if not user_id or not list_id or not blog_id:
+        return jsonify({"error": "Missing required parameters."}), 400
+
     response = create_metricool_list_post(blog_id, user_id, list_id)
 
     if response.status_code != 200:
