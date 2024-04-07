@@ -1,6 +1,7 @@
 import requests, os, time, textwrap
 from pathlib import Path
 from PIL import Image, ImageFont, ImageDraw
+from pyairtable import Api, Table, Base
 from logger import logger
 import cloudinary.uploader
 import cloudinary
@@ -195,3 +196,9 @@ def upload_image(img_path):
         api_secret=os.getenv("CLOUDINARY_API_SECRET"),
     )
     return cloudinary.uploader.upload(img_path)
+
+
+def get_table_by_id(table, submission_id, api, base_id):
+    base = Base(api, base_id)
+    table = Table(None, base, table)
+    return table.get(submission_id)

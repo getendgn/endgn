@@ -12,7 +12,6 @@ from metricool import (
 from gdrive import (
     upload_video_to_drive,
     download_file_from_drive,
-    delete_file_from_drive,
 )
 from transcription import transcribe_video
 from utils import (
@@ -22,12 +21,14 @@ from utils import (
     send_prompt_to_claude,
     edit_hook_to_image,
     upload_image,
+    get_table_by_id,
 )
 from logger import logger
 from youtube import flow
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
+from time import sleep
 
 # Initialize flask app
 app = Flask(__name__)
@@ -65,13 +66,6 @@ if not app.debug:
 
 # Initialize Airtable API
 api = Api(AIRTABLE_API_KEY)
-
-
-# Helper functions
-def get_submission_by_id(submission_id):
-    base = Base(api, AIRTABLE_BASE_ID)
-    table = Table(None, base, "Submissions")
-    return table.get(submission_id)
 
 
 def get_platform_strategy(platform_name, user_id):
@@ -116,7 +110,9 @@ def update_response_table(platform_name, submission_id, response, user_id):
     rate_limit="7/m",
 )
 def generate_content_for_platform(platform, submission_id):
-    submission_record = get_submission_by_id(submission_id)
+    submission_record = get_table_by_id(
+        "Submissions", submission_id, api, AIRTABLE_BASE_ID
+    )
 
     user_id = submission_record["fields"].get("User", [None])[0]
 
@@ -357,16 +353,23 @@ def process_video_task(record_id, video_url, file_name, customer_name, user_name
     logger.info(f"Transcribed video and saved to Airtable")
     os.unlink(video_path)
 
-    prompt = f"""Generate a YouTube title, description and a very short engaging hook for thumbnail using the provided transcription in JSON format:
-    Transcript: "{transcription}"
-    You should Speak from first-person perspective and Your response should only include the title, description and hook in JSON format, without any additional information.
-    """
+    video_record = get_table_by_id("Videos", record_id, api, AIRTABLE_BASE_ID)
+    user_id = video_record["fields"]["User"][0]
+    user = get_user_record(user_id)
 
-    response = send_prompt_to_claude(prompt, CLAUDE_MODEL, ANTHROPIC_API_KEY)
-    json_response = json.loads(response)
-    title = json_response.get("title")
-    description = json_response.get("description")
-    hook = json_response.get("hook")
+    title_prompt = user["fields"].get("Video Title Prompt")
+    desc_prompt = user["fields"].get("Video Description Prompt")
+    hook_prompt = user["fields"].get("Video Hook Prompt")
+
+    title_prompt = title_prompt.format().format(Transcription=transcription)
+    desc_prompt = desc_prompt.format().format(Transcription=transcription)
+    hook_prompt = hook_prompt.format().format(Transcription=transcription)
+
+    title = send_prompt_to_claude(title_prompt, CLAUDE_MODEL, ANTHROPIC_API_KEY)
+    sleep(5)
+    description = send_prompt_to_claude(desc_prompt, CLAUDE_MODEL, ANTHROPIC_API_KEY)
+    sleep(5)
+    hook = send_prompt_to_claude(hook_prompt, CLAUDE_MODEL, ANTHROPIC_API_KEY)
 
     # update airtable
     update_data = {
