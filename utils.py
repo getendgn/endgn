@@ -7,6 +7,7 @@ import cloudinary.uploader
 import cloudinary
 from pypdf import PdfReader
 import io
+from docx import Document
 
 
 def download_tmp_image(url, filename):
@@ -210,3 +211,24 @@ def get_pdf_content(url):
     response = requests.get(url)
     pdf_file = PdfReader(io.BytesIO(response.content))
     return "".join([page.extract_text() for page in pdf_file.pages])
+
+
+def get_docx_content(url):
+    response = requests.get(url)
+    doc_file = io.BytesIO(response.content)
+
+    doc = Document(doc_file)
+    text = [p.text for p in doc.paragraphs]
+
+    return "\n".join(text)
+
+
+def get_file_content(url):
+    h = requests.head(url)
+    header = h.headers
+    file_type = header.get("content-type")
+
+    if "document" in file_type:
+        return get_docx_content(url)
+    elif "pdf" in file_type:
+        return get_pdf_content(url)

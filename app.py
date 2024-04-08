@@ -22,7 +22,7 @@ from utils import (
     edit_hook_to_image,
     upload_image,
     get_table_by_id,
-    get_pdf_content,
+    get_file_content,
 )
 from logger import logger
 from youtube import flow
@@ -130,14 +130,14 @@ def generate_content_for_platform(platform, submission_id):
         "Strategy": strategy_text,
     }
 
-    transcript_pdf = submission_record["fields"].get("Topic PDF Upload")
-    writing_style_pdf = submission_record["fields"].get("Writing Style PDF Upload")
-    if transcript_pdf:
-        pdf_url = transcript_pdf[0].get("url")
-        prompt_data["Transcript"] = get_pdf_content(pdf_url)
-    if writing_style_pdf:
-        pdf_url = writing_style_pdf[0].get("url")
-        prompt_data["WritingStyle"] = get_pdf_content(pdf_url)
+    transcript_file = submission_record["fields"].get("Topic PDF Upload")
+    writing_style_file = submission_record["fields"].get("Writing Style PDF Upload")
+    if transcript_file:
+        file_url = transcript_file[0].get("url")
+        prompt_data["Transcript"] = get_file_content(file_url)
+    if writing_style_file:
+        file_url = writing_style_file[0].get("url")
+        prompt_data["WritingStyle"] = get_file_content(file_url)
 
     prompt = prompt_template.format().format(**prompt_data)
     claude_model = (
