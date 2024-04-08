@@ -14,3 +14,4 @@ openai
 pillow
 cloudinary
 pypdf
+python-docx
