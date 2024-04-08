@@ -5,6 +5,8 @@ from pyairtable import Api, Table, Base
 from logger import logger
 import cloudinary.uploader
 import cloudinary
+from pypdf import PdfReader
+import io
 
 
 def download_tmp_image(url, filename):
@@ -198,7 +200,13 @@ def upload_image(img_path):
     return cloudinary.uploader.upload(img_path)
 
 
-def get_table_by_id(table, submission_id, api, base_id):
+def get_table_by_id(table, record_id, api, base_id):
     base = Base(api, base_id)
     table = Table(None, base, table)
-    return table.get(submission_id)
+    return table.get(record_id)
+
+
+def get_pdf_content(url):
+    response = requests.get(url)
+    pdf_file = PdfReader(io.BytesIO(response.content))
+    return "".join([page.extract_text() for page in pdf_file.pages])

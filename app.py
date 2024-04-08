@@ -22,6 +22,7 @@ from utils import (
     edit_hook_to_image,
     upload_image,
     get_table_by_id,
+    get_pdf_content,
 )
 from logger import logger
 from youtube import flow
@@ -127,6 +128,16 @@ def generate_content_for_platform(platform, submission_id):
         "WritingStyle": submission_record["fields"].get("Writing Style", ""),
         "Strategy": strategy_text,
     }
+
+    transcript_pdf = submission_record["fields"].get("Topic PDF Upload")
+    writing_style_pdf = submission_record["fields"].get("Writing Style PDF Upload")
+    if transcript_pdf:
+        pdf_url = transcript_pdf[0].get("url")
+        prompt_data["Transcript"] = get_pdf_content(pdf_url)
+    if writing_style_pdf:
+        pdf_url = writing_style_pdf[0].get("url")
+        prompt_data["WritingStyle"] = get_pdf_content(pdf_url)
+
     prompt = prompt_template.format().format(**prompt_data)
     claude_model = (
         submission_record["fields"].get("Anthropic Model", CLAUDE_MODEL).strip()
@@ -170,30 +181,28 @@ def generate_content_route():
     submission_data = data.get("submission_id")
     app.logger.info(f"Submission data: {submission_data}")
 
-    if submission_data:
-        submission_id = submission_data.get("submissionId")
-        app.logger.info(f"Submission ID: {submission_id}")
-
-        if not submission_id:
-            app.logger.error("Invalid submission ID")
-            return jsonify({"error": "Invalid submission ID."}), 400
-
-        platforms = os.getenv(
-            "PLATFORMS",
-            "LinkedIn Articles,Twitter,Facebook,Instagram,YouTube,Pinterest,Blogs",
-        ).split(",")
-        for i, platform in enumerate(platforms):
-            app.logger.info(f"Generating content for platform: {platform}")
-            generate_content_for_platform.apply_async(
-                countdown=i * 10,
-                args=(platform, submission_id),
-            )
-
-        app.logger.info("Content generation tasks queued")
-        return jsonify({"message": "Content generation tasks queued."})
-    else:
+    if not submission_data:
         app.logger.error("Missing submission ID")
         return jsonify({"error": "Missing submission ID."}), 400
+
+    submission_id = submission_data.get("submissionId")
+    if not submission_id:
+        app.logger.error("Invalid submission ID")
+        return jsonify({"error": "Invalid submission ID."}), 400
+
+    platforms = os.getenv(
+        "PLATFORMS",
+        "LinkedIn Articles,Twitter,Facebook,Instagram,YouTube,Pinterest,Blogs",
+    ).split(",")
+    for i, platform in enumerate(platforms):
+        app.logger.info(f"Generating content for platform: {platform}")
+        generate_content_for_platform.apply_async(
+            countdown=i * 10,
+            args=(platform, submission_id),
+        )
+
+    app.logger.info("Content generation tasks queued")
+    return jsonify({"message": "Content generation tasks queued."})
 
 
 def get_latest_submission(base_id):
