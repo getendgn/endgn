@@ -111,6 +111,7 @@ def update_response_table(platform_name, submission_id, response, user_id):
     rate_limit="7/m",
 )
 def generate_content_for_platform(platform, submission_id):
+    sleep(20)
     submission_record = get_table_by_id(
         "Submissions", submission_id, api, AIRTABLE_BASE_ID
     )
