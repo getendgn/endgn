@@ -484,10 +484,7 @@ def upload_to_youtube():
     description = video_record["fields"].get("Video Description")
     google_drive_url = video_record["fields"].get("Storage Link")
     thumbnail_url = video_record["fields"].get("Thumbnail Image")[0].get("url")
-
-    logger.info(
-        f"uploading video with title: {title}, description: {description}, template_url: {thumbnail_url}"
-    )
+    thumbnail = download_tmp_image(thumbnail_url, title[:10])
 
     file_id = re.search(r"open\?id=([^\&]+)", google_drive_url).group(1)
     video_path = download_file_from_drive(file_id)
@@ -503,13 +500,18 @@ def upload_to_youtube():
                     "title": title,
                     "defaultLanguage": "en",
                     "defaultAudioLanguage": "en",
-                    "thumbnails": {"default": {"url": thumbnail_url}},
                 },
                 "status": {"privacyStatus": "public"},
             },
             media_body=MediaFileUpload(video_path),
         )
         .execute()
+    )
+
+    # set thumbnail
+    youtube.thumbnails().set(
+        video_id=response["id"],
+        media_body=thumbnail,
     )
     update_airtable_table(
         "Videos", video_record_id, {"Youtube Video ID": response["id"]}
