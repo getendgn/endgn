@@ -1,5 +1,5 @@
 import os, re, json
-from flask import Flask, request, jsonify, url_for, session, redirect
+from flask import Flask, request, jsonify, session, redirect, Response
 from pyairtable import Api, Table, Base
 from celery import Celery
 from cryptography.fernet import Fernet
@@ -446,7 +446,19 @@ def oauth2callback():
     update_data = {"Youtube Credential": credentials.to_json()}
     update_airtable_table("Users", user_record_id, update_data)
 
-    return "Authorization successful!"
+    oauth_success_page = """<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Authorization Successful</title>
+    </head>
+    <body>
+        <h1>Authorization Successful!</h1>
+        <p>You may now close this tab.</p>
+    </body>
+    </html>"""
+    return Response(oauth_success_page, mimetype="text/html")
 
 
 @app.route("/upload-to-youtube", methods=["POST"])
