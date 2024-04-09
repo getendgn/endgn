@@ -510,7 +510,7 @@ def upload_to_youtube():
 
     # set thumbnail
     youtube.thumbnails().set(
-        video_id=response["id"],
+        videoId=response["id"],
         media_body=thumbnail,
     )
     update_airtable_table(
