@@ -508,7 +508,7 @@ def upload_to_youtube():
         )
         .execute()
     )
-    logger.info(f"Uploaded video to youtube")
+    logger.info(f"Uploaded video to youtube. response: {response}")
     return "Video uploaded successfully!"
 
 
