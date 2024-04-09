@@ -487,7 +487,7 @@ def upload_to_youtube():
     thumbnail_url = video_record["fields"].get("Thumbnail Image")[0].get("url")
 
     logger.info(
-        "uploading video with title: {title}, description: {description}, template_url: {template_url}"
+        f"uploading video with title: {title}, description: {description}, template_url: {thumbnail_url}"
     )
 
     file_id = re.search(r"open\?id=([^\&]+)", google_drive_url).group(1)
