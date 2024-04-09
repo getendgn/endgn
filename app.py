@@ -514,7 +514,9 @@ def upload_to_youtube():
         media_body=thumbnail,
     )
     update_airtable_table(
-        "Videos", video_record_id, {"Youtube Video ID": response["id"]}
+        "Videos",
+        video_record_id,
+        {"Youtube Link": f"https://www.youtube.com/watch?v=response['id']"},
     )
     logger.info(f"Uploaded video to youtube.")
     return "Video uploaded successfully!"
