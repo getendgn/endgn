@@ -291,6 +291,10 @@ def schedule_post():
 
     if platform == "pinterest":
         scheduled_post_data["pinterestData"] = {"pinNewFormat": True}
+    
+    if platform == "linkedin":
+        logger.info("Scheduling LinkedIn post")
+        return logger.info(scheduled_post_data)
 
     response = schedule_metricool_post(blog_id, user_id, scheduled_post_data)
 
