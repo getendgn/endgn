@@ -310,6 +310,9 @@ def post_to_list():
     list_id = data.get("list_id")
     post_text = data.get("text")
     media_urls = data.get("media_urls")
+    
+    
+    return print(media_urls)
 
     if not user_id or not list_id or not blog_id:
         return jsonify({"error": "Missing required parameters."}), 400
