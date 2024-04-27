@@ -316,6 +316,12 @@ def post_to_list():
 
     response = create_metricool_list_post(blog_id, user_id, list_id)
 
+    for media_url in media_urls:
+        image_path = download_tmp_image(media_url)
+        updated_media_url = upload_image(image_path).get("secure_url")
+        media_urls.remove(media_url)
+        media_urls.append(updated_media_url)
+
     if response.status_code != 200:
         app.logger.error("Failed to create list post, Status: %s", response.status_code)
         app.logger.error("Error: %s", response.content)
